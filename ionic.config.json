@@ -1,0 +1,7 @@
+{
+  "name": "PixelPal",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
