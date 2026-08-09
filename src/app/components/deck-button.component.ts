@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonConfig, CompanionService } from '../../services/companion.service';
+import { ButtonConfig, CompanionService } from '../services/companion.service';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';

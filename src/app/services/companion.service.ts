@@ -226,7 +226,7 @@ export class CompanionService {
       if (Array.isArray(data)) {
         // Direct screens list payload (either as standard response or direct sync)
         this.updateScreens(data);
-      } else if (data.type === 'sync' || data.type === 'screens_updated') {
+      } else if (data.type === 'sync' || data.type === 'screens') {
         // If it's a direct message containing screens, or indicating update
         if (data.screens && Array.isArray(data.screens)) {
           this.updateScreens(data.screens);

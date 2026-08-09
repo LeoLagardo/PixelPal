@@ -1,11 +1,11 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService, ScreenConfig, ButtonConfig, PairedDevice } from '../services/companion.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DeckButtonComponent } from './components/deck-button.component';
-import { ScreensaverClockComponent } from './components/screensaver-clock.component';
-import { Subscription } from 'rxjs';
+import { DeckButtonComponent } from '../components/deck-button.component';
+import { ScreensaverClockComponent } from '../components/screensaver-clock.component';
+import { fromEvent, merge, startWith, Subscription, switchMap, tap, timer } from 'rxjs';
 import {
   IonButton,
   IonIcon,
@@ -17,6 +17,8 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline } from 'ionicons/icons';
+import { PixelHeartComponent } from '../components/pixel-heart.component';
+import { CompanionRobotComponent } from '../components/companion-bot.component';
 
 @Component({
   selector: 'app-home',
@@ -28,6 +30,8 @@ import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutl
     FormsModule,
     DeckButtonComponent,
     ScreensaverClockComponent,
+    PixelHeartComponent,
+    CompanionRobotComponent,
     IonButton,
     IonIcon,
     IonToast,
@@ -39,6 +43,7 @@ import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutl
 })
 export class HomePage implements OnInit, OnDestroy {
   @ViewChild('carouselContainer', { static: false }) carouselContainer!: ElementRef<HTMLDivElement>;
+  @ViewChildren('hideable', { read: ElementRef }) hideableDivs!: QueryList<ElementRef>;
 
   public pairedDevice: PairedDevice | null = null;
   public connectionState: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
@@ -50,6 +55,8 @@ export class HomePage implements OnInit, OnDestroy {
   public toastMsg = '';
 
   private subs = new Subscription();
+
+  private readonly INACTIVITY_MS = 2000;
 
   constructor(public companionService: CompanionService, private router: Router) {
     addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline });
@@ -85,6 +92,10 @@ export class HomePage implements OnInit, OnDestroy {
         }
       })
     );
+  }
+
+  ngAfterViewInit() {
+    this.setupActivityListener();
   }
 
   ngOnDestroy() {
@@ -179,4 +190,42 @@ export class HomePage implements OnInit, OnDestroy {
       this.currentScreenIndex = index;
     }
   }
+
+  private setupActivityListener() {
+    const activityEvents$ = merge(
+      fromEvent(document, 'touchstart'),
+      fromEvent(document, 'click'),
+      fromEvent(document, 'mousemove'),
+      fromEvent(document, 'keydown')
+    );
+
+    // ✅ FIX 1 & 3: Single subscription handles both show AND hide
+    // ✅ FIX 2: Runs in AfterViewInit so @ViewChildren is populated
+    const inactivitySub = activityEvents$.pipe(
+      // Show immediately on any activity
+      tap(() => this.showElements()),
+      // Reset timer on every activity event
+      switchMap(() => timer(this.INACTIVITY_MS)),
+      // Start timer immediately on init
+      startWith(0),
+      // Hide when timer fires
+      tap(() => this.hideElements())
+    ).subscribe();
+
+    // ✅ All subscriptions tracked in one place
+    this.subs.add(inactivitySub);
+  }
+
+  private hideElements() {
+    this.hideableDivs.forEach(div =>
+      div.nativeElement.classList.add('hidden')
+    );
+  }
+
+  private showElements() {
+    this.hideableDivs.forEach(div =>
+      div.nativeElement.classList.remove('hidden')
+    );
+  }
+
 }

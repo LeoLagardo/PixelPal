@@ -1,6 +1,6 @@
 <div class="main-layout">
   <!-- Thin persistent top status bar overlay -->
-  <div class="top-status-bar">
+  <div class="top-status-bar" #hideable>
     <div class="status-left">
       <span
         class="status-dot"
@@ -80,10 +80,10 @@
             *ngFor="let screen of screens; let idx = index"
           >
             <!-- Screen Title/Header -->
-            <div class="slide-header">
+            <!-- <div class="slide-header">
               <span class="screen-title-tag">{{ screen.name }}</span>
               <span class="screen-type-badge">{{ screen.type }}</span>
-            </div>
+            </div> -->
 
             <!-- Content Area inside Slide -->
             <div class="slide-content-area">
@@ -108,18 +108,26 @@
               </div>
 
               <!-- Type 2: Screensaver -->
-              <div
-                *ngIf="screen.type === 'screensaver'"
-                class="screensaver-layout-container"
-              >
-                <app-screensaver-clock></app-screensaver-clock>
-              </div>
+              @if (screen.type === 'screensaver') {
+
+                <div class="screensaver-layout-container">
+                  @if (screen.id === 'f6e299b3-f128-4252-890c-a3b4e0ade3e3') {
+                    <app-screensaver-clock></app-screensaver-clock>
+                  } @else if (screen.id === 'f6e299b3-f128-4252-890c-a3b4e0adexxx') {
+                    <app-pixel-heart></app-pixel-heart>
+                  } @else if (screen.id === 'app-companion-robot') {
+                    <app-companion-robot></app-companion-robot>
+                  }
+                </div>
+                
+              }
+
             </div>
           </div>
         </div>
 
         <!-- Dot indicator at bottom of carousel -->
-        <div class="carousel-dots-indicator" *ngIf="screens.length > 1">
+        <div class="carousel-dots-indicator" *ngIf="screens.length > 1" #hideable>
           <span
             class="indicator-dot"
             *ngFor="let s of screens; let idx = index"
