@@ -1,12 +1,182 @@
-import { Component } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { CompanionService, ScreenConfig, ButtonConfig, PairedDevice } from '../services/companion.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { DeckButtonComponent } from './components/deck-button.component';
+import { ScreensaverClockComponent } from './components/screensaver-clock.component';
+import { Subscription } from 'rxjs';
+import {
+  IonButton,
+  IonIcon,
+  IonToast,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    DeckButtonComponent,
+    ScreensaverClockComponent,
+    IonButton,
+    IonIcon,
+    IonToast,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent
+  ],
 })
-export class HomePage {
-  constructor() {}
+export class HomePage implements OnInit, OnDestroy {
+  @ViewChild('carouselContainer', { static: false }) carouselContainer!: ElementRef<HTMLDivElement>;
+
+  public pairedDevice: PairedDevice | null = null;
+  public connectionState: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
+  public screens: ScreenConfig[] = [];
+  public currentScreenIndex = 0;
+
+  // Toast for errors
+  public showToast = false;
+  public toastMsg = '';
+
+  private subs = new Subscription();
+
+  constructor(public companionService: CompanionService, private router: Router) {
+    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline });
+  }
+
+  ngOnInit() {
+    this.subs.add(
+      this.companionService.pairedDevice$.subscribe((device) => {
+        this.pairedDevice = device;
+      })
+    );
+
+    this.subs.add(
+      this.companionService.connectionState$.subscribe((state) => {
+        this.connectionState = state;
+      })
+    );
+
+    this.subs.add(
+      this.companionService.screens$.subscribe((screens) => {
+        this.screens = screens || [];
+        // Ensure index doesn't go out of bounds
+        if (this.currentScreenIndex >= this.screens.length) {
+          this.currentScreenIndex = Math.max(0, this.screens.length - 1);
+        }
+      })
+    );
+
+    this.subs.add(
+      this.companionService.lastError$.subscribe((error) => {
+        if (error) {
+          this.triggerToast(error);
+        }
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
+  }
+
+  // Navigation
+  public goToSettings() {
+    this.router.navigateByUrl('/settings');
+  }
+
+  public goToPairing() {
+    this.router.navigateByUrl('/pairing');
+  }
+
+  public forceReconnect() {
+    this.companionService.connect();
+  }
+
+  public forgetDevice() {
+    this.companionService.forgetDevice();
+    this.router.navigateByUrl('/pairing', { replaceUrl: true });
+  }
+
+  // Toast
+  private triggerToast(msg: string) {
+    this.toastMsg = msg;
+    this.showToast = true;
+  }
+
+  // Grid columns and rows style generator
+  public getGridStyles(screen: ScreenConfig) {
+    const size = screen.grid_size || '4x4';
+    const [cols, rows] = size.split('x').map(Number);
+    const validCols = isNaN(cols) ? 4 : cols;
+    const validRows = isNaN(rows) ? 4 : rows;
+
+    return {
+      'grid-template-columns': `repeat(${validCols}, 1fr)`,
+      'grid-template-rows': `repeat(${validRows}, 1fr)`
+    };
+  }
+
+  // Get list of buttons padded with empty placeholders to fill grid size
+  public getGridButtons(screen: ScreenConfig): (ButtonConfig | null)[] {
+    const size = screen.grid_size || '4x4';
+    const [cols, rows] = size.split('x').map(Number);
+    const validCols = isNaN(cols) ? 4 : cols;
+    const validRows = isNaN(rows) ? 4 : rows;
+    const totalSlots = validCols * validRows;
+
+    const sourceButtons = screen.buttons || [];
+    const buttons: (ButtonConfig | null)[] = [];
+
+    for (let i = 0; i < totalSlots; i++) {
+      if (i < sourceButtons.length) {
+        buttons.push(sourceButtons[i]);
+      } else {
+        buttons.push(null);
+      }
+    }
+    return buttons;
+  }
+
+  // Button Action Handler
+  public onButtonTrigger(button: ButtonConfig) {
+    console.log('Button action triggered:', button);
+    this.companionService.sendAction(button.type, button.payload);
+  }
+
+  // Custom Carousel Touch/Scroll Tracking
+  public onCarouselScroll(event: Event) {
+    const container = event.target as HTMLElement;
+    if (container) {
+      const scrollLeft = container.scrollLeft;
+      const width = container.clientWidth;
+      if (width > 0) {
+        // Calculate the nearest page
+        this.currentScreenIndex = Math.round(scrollLeft / width);
+      }
+    }
+  }
+
+  public scrollToScreen(index: number) {
+    if (this.carouselContainer && this.carouselContainer.nativeElement) {
+      const container = this.carouselContainer.nativeElement;
+      const width = container.clientWidth;
+      container.scrollTo({
+        left: index * width,
+        behavior: 'smooth'
+      });
+      this.currentScreenIndex = index;
+    }
+  }
 }

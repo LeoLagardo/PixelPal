@@ -1,20 +1,141 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<div class="main-layout">
+  <!-- Thin persistent top status bar overlay -->
+  <div class="top-status-bar">
+    <div class="status-left">
+      <span
+        class="status-dot"
+        [ngClass]="{
+          'is-connected': connectionState === 'connected',
+          'is-connecting': connectionState === 'connecting',
+          'is-disconnected': connectionState === 'disconnected'
+        }"
+      ></span>
+      <span class="pc-name" (click)="forceReconnect()">
+        {{ pairedDevice ? (pairedDevice.name || 'PC Connecting...') : 'No PC Paired' }}
+      </span>
+      <span class="connection-action-label" *ngIf="connectionState !== 'connected'" (click)="forceReconnect()">
+        (Reconnect)
+      </span>
+    </div>
+    <div class="status-right">
+      <button class="status-icon-btn" (click)="forgetDevice()" title="Disconnect/Unpair">
+        <ion-icon name="unlink-outline"></ion-icon>
+        <span class="btn-text">Disconnect</span>
+      </button>
+      <button class="status-icon-btn" (click)="goToSettings()" title="Settings">
+        <ion-icon name="settings-outline"></ion-icon>
+      </button>
+    </div>
   </div>
-</ion-content>
+
+  <!-- Content Slot -->
+  <div class="content-body">
+    <!-- View 1: Not paired yet -->
+    <div class="unpaired-container" *ngIf="!pairedDevice">
+      <ion-card color="dark" class="connect-pc-card">
+        <ion-card-header>
+          <div class="card-icon-header">
+            <ion-icon name="wifi-outline" class="card-large-icon"></ion-icon>
+          </div>
+          <ion-card-title class="ion-text-center">Connect to your PC</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="ion-text-center">
+          <p class="connect-desc">
+            StreamDeck Companion requires a paired connection to your PC local network server.
+          </p>
+          <ion-button expand="block" color="primary" class="scan-qr-btn" (click)="goToPairing()">
+            <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+            Scan QR / Setup Connection
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- View 2: Paired display (carousel of screens) -->
+    <div class="paired-display" *ngIf="pairedDevice">
+      <!-- Empty screens state -->
+      <div class="empty-screens-container" *ngIf="screens.length === 0">
+        <div class="empty-inner">
+          <p>No screens configured on your desktop.</p>
+          <span class="sub-text">Create button layouts in the desktop application to sync here.</span>
+          <ion-button size="small" fill="outline" color="secondary" (click)="forceReconnect()" class="refresh-btn">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
+            Sync Layout
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Full-bleed Carousel -->
+      <div
+        class="carousel-wrapper"
+        *ngIf="screens.length > 0"
+      >
+        <div
+          #carouselContainer
+          class="carousel-container"
+          (scroll)="onCarouselScroll($event)"
+        >
+          <div
+            class="carousel-slide"
+            *ngFor="let screen of screens; let idx = index"
+          >
+            <!-- Screen Title/Header -->
+            <div class="slide-header">
+              <span class="screen-title-tag">{{ screen.name }}</span>
+              <span class="screen-type-badge">{{ screen.type }}</span>
+            </div>
+
+            <!-- Content Area inside Slide -->
+            <div class="slide-content-area">
+              <!-- Type 1: Grid -->
+              <div
+                *ngIf="screen.type === 'grid'"
+                class="grid-layout-container"
+                [ngStyle]="getGridStyles(screen)"
+              >
+                <div
+                  class="grid-cell"
+                  *ngFor="let button of getGridButtons(screen)"
+                >
+                  <ng-container *ngIf="button">
+                    <app-deck-button
+                      [button]="button"
+                      (triggerAction)="onButtonTrigger($event)"
+                    ></app-deck-button>
+                  </ng-container>
+                  <div class="empty-grid-slot" *ngIf="!button"></div>
+                </div>
+              </div>
+
+              <!-- Type 2: Screensaver -->
+              <div
+                *ngIf="screen.type === 'screensaver'"
+                class="screensaver-layout-container"
+              >
+                <app-screensaver-clock></app-screensaver-clock>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dot indicator at bottom of carousel -->
+        <div class="carousel-dots-indicator" *ngIf="screens.length > 1">
+          <span
+            class="indicator-dot"
+            *ngFor="let s of screens; let idx = index"
+            [ngClass]="{ 'is-active': idx === currentScreenIndex }"
+            (click)="scrollToScreen(idx)"
+          ></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast for network errors or app action feedback -->
+  <ion-toast
+    [isOpen]="showToast"
+    [message]="toastMsg"
+    [duration]="3000"
+    (didDismiss)="showToast = false"
+  ></ion-toast>
+</div>
