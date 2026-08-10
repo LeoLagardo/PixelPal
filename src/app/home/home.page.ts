@@ -13,10 +13,11 @@ import {
   IonCard,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent
+  IonCardContent,
+  IonAlert
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline } from 'ionicons/icons';
+import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
 
@@ -38,7 +39,8 @@ import { CompanionRobotComponent } from '../components/companion-bot.component';
     IonCard,
     IonCardHeader,
     IonCardTitle,
-    IonCardContent
+    IonCardContent,
+    IonAlert
   ],
 })
 export class HomePage implements OnInit, OnDestroy {
@@ -54,12 +56,27 @@ export class HomePage implements OnInit, OnDestroy {
   public showToast = false;
   public toastMsg = '';
 
+  public alertButtons = [
+    {
+      text: 'Connect to new PC',
+      handler: () => {
+        this.forgetDevice();
+      }
+    },
+    {
+      text: 'Reconnect',
+      handler: () => {
+        this.forceReconnect();
+      }
+    }
+  ];
+
   private subs = new Subscription();
 
   private readonly INACTIVITY_MS = 2000;
 
   constructor(public companionService: CompanionService, private router: Router) {
-    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline });
+    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline });
   }
 
   ngOnInit() {
@@ -191,6 +208,18 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
+  public goToPrevScreen() {
+    if (this.currentScreenIndex > 0) {
+      this.scrollToScreen(this.currentScreenIndex - 1);
+    }
+  }
+
+  public goToNextScreen() {
+    if (this.currentScreenIndex < this.screens.length - 1) {
+      this.scrollToScreen(this.currentScreenIndex + 1);
+    }
+  }
+
   private setupActivityListener() {
     const activityEvents$ = merge(
       fromEvent(document, 'touchstart'),
@@ -220,12 +249,22 @@ export class HomePage implements OnInit, OnDestroy {
     this.hideableDivs.forEach(div =>
       div.nativeElement.classList.add('hidden')
     );
+    this.setCarouselPadding('0')
   }
 
   private showElements() {
     this.hideableDivs.forEach(div =>
       div.nativeElement.classList.remove('hidden')
     );
+    this.setCarouselPadding('12px 16px')
   }
 
+  private setCarouselPadding(padding: string) {
+    const carousels = document.querySelectorAll<HTMLElement>('.carousel-slide');
+    if (carousels) {
+      carousels.forEach(carousel => {
+        carousel.style.padding = `${padding}`;
+      });
+    }
+  }
 }

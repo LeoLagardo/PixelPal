@@ -5,17 +5,15 @@ import { App } from '@capacitor/app';
 export interface ButtonConfig {
   id: string;
   label: string;
-  icon: string;
+  icon_class: string;
   type: string;
   payload: string;
-  image?: string;
   trigger?: 'press' | 'hold';
 }
 
 export interface ScreenConfig {
   id: string;
   name: string;
-  icon?: string;
   type: 'grid' | 'screensaver';
   grid_size?: string;
   buttons?: ButtonConfig[];

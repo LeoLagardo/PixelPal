@@ -70,6 +70,24 @@
         class="carousel-wrapper"
         *ngIf="screens.length > 0"
       >
+        <button
+          *ngIf="currentScreenIndex > 0"
+          class="carousel-nav-btn nav-left"
+          (click)="goToPrevScreen()"
+          #hideable
+        >
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+
+        <button
+          *ngIf="currentScreenIndex < screens.length - 1"
+          class="carousel-nav-btn nav-right"
+          (click)="goToNextScreen()"
+          #hideable
+        >
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+
         <div
           #carouselContainer
           class="carousel-container"
@@ -127,14 +145,17 @@
         </div>
 
         <!-- Dot indicator at bottom of carousel -->
-        <div class="carousel-dots-indicator" *ngIf="screens.length > 1" #hideable>
-          <span
-            class="indicator-dot"
-            *ngFor="let s of screens; let idx = index"
-            [ngClass]="{ 'is-active': idx === currentScreenIndex }"
-            (click)="scrollToScreen(idx)"
-          ></span>
-        </div>
+        @if (screens.length > 1) {
+          <div class="carousel-dots-indicator" #hideable>
+            @for (s of screens; track $index) {
+              <span
+                class="indicator-dot"
+                [ngClass]="{ 'is-active': $index === currentScreenIndex }"
+                (click)="scrollToScreen($index)"
+              ></span>
+            }
+          </div>
+        }
       </div>
     </div>
   </div>
@@ -146,4 +167,13 @@
     [duration]="3000"
     (didDismiss)="showToast = false"
   ></ion-toast>
+
+  <!-- Disconnect Alert -->
+  <ion-alert
+    [isOpen]="connectionState === 'disconnected' && !!pairedDevice"
+    header="Disconnected"
+    message="Connection to your PC was lost."
+    [buttons]="alertButtons"
+    [backdropDismiss]="false"
+  ></ion-alert>
 </div>

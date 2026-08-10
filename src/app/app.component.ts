@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { KeepAwake } from '@capacitor-community/keep-awake';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +9,8 @@ import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 })
 export class AppComponent {
   constructor() {}
+
+  async ngOnInit() {
+    await KeepAwake.keepAwake();
+  }
 }

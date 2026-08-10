@@ -88,35 +88,37 @@ import jsQR from 'jsqr';
             </div>
 
             <!-- Manual Input Fields -->
-            <div *ngIf="mode === 'manual'">
-              <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                <ion-input
-                  [(ngModel)]="ip"
-                  placeholder="PC IP Address (e.g., 192.168.1.50)"
-                  type="text"
-                ></ion-input>
-              </ion-item>
+            @if (mode === 'manual') {
+              <div>
+                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+                  <ion-input
+                    [(ngModel)]="ip"
+                    placeholder="PC IP Address (e.g., 192.168.1.50)"
+                    type="text"
+                  ></ion-input>
+                </ion-item>
 
-              <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                <ion-input
-                  [(ngModel)]="port"
-                  placeholder="Port (e.g., 8080)"
-                  type="number"
-                ></ion-input>
-              </ion-item>
+                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+                  <ion-input
+                    [(ngModel)]="port"
+                    placeholder="Port (e.g., 8080)"
+                    type="number"
+                  ></ion-input>
+                </ion-item>
 
-              <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                <ion-input
-                  [(ngModel)]="token"
-                  placeholder="Pairing Token (secret)"
-                  type="text"
-                ></ion-input>
-              </ion-item>
+                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+                  <ion-input
+                    [(ngModel)]="token"
+                    placeholder="Pairing Token (secret)"
+                    type="text"
+                  ></ion-input>
+                </ion-item>
 
-              <ion-button expand="block" (click)="pairWithManual()" color="primary" class="action-btn">
-                Pair Manually
-              </ion-button>
-            </div>
+                <ion-button expand="block" (click)="pairWithManual()" color="primary" class="action-btn">
+                  Pair Manually
+                </ion-button>
+              </div>
+            }
           </ion-card-content>
         </ion-card>
 
