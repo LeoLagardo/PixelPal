@@ -1,31 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { App } from '@capacitor/app';
-
-export interface ButtonConfig {
-  id: string;
-  label: string;
-  icon_class: string;
-  type: string;
-  payload: string;
-  trigger?: 'press' | 'hold';
-}
-
-export interface ScreenConfig {
-  id: string;
-  name: string;
-  type: 'grid' | 'screensaver';
-  grid_size?: string;
-  buttons?: ButtonConfig[];
-  saver_style?: string;
-}
-
-export interface PairedDevice {
-  ip: string;
-  port: number;
-  token: string;
-  name?: string;
-}
+import { PairedDevice, ScreenConfig } from '../models';
 
 @Injectable({
   providedIn: 'root',

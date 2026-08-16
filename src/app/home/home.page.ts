@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { Router } from '@angular/router';
-import { CompanionService, ScreenConfig, ButtonConfig, PairedDevice } from '../services/companion.service';
+import { CompanionService } from '../services/companion.service';
+import { ScreenConfig, ButtonConfig, PairedDevice } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DeckButtonComponent } from '../components/deck-button.component';
@@ -20,6 +21,9 @@ import { addIcons } from 'ionicons';
 import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
+import { GridStylesPipe, GridButtonsPipe } from '../pipes';
+import { GRADIENT_THEMES } from '../constants/themes.constant';
+export { GRADIENT_THEMES };
 
 @Component({
   selector: 'app-home',
@@ -29,6 +33,8 @@ import { CompanionRobotComponent } from '../components/companion-bot.component';
   imports: [
     CommonModule,
     FormsModule,
+    GridStylesPipe,
+    GridButtonsPipe,
     DeckButtonComponent,
     ScreensaverClockComponent,
     PixelHeartComponent,
@@ -143,44 +149,18 @@ export class HomePage implements OnInit, OnDestroy {
     this.showToast = true;
   }
 
-  // Grid columns and rows style generator
-  public getGridStyles(screen: ScreenConfig) {
-    const size = screen.grid_size || '4x4';
-    const [cols, rows] = size.split('x').map(Number);
-    const validCols = isNaN(cols) ? 4 : cols;
-    const validRows = isNaN(rows) ? 4 : rows;
 
-    return {
-      'grid-template-columns': `repeat(${validCols}, 1fr)`,
-      'grid-template-rows': `repeat(${validRows}, 1fr)`
-    };
-  }
-
-  // Get list of buttons padded with empty placeholders to fill grid size
-  public getGridButtons(screen: ScreenConfig): (ButtonConfig | null)[] {
-    const size = screen.grid_size || '4x4';
-    const [cols, rows] = size.split('x').map(Number);
-    const validCols = isNaN(cols) ? 4 : cols;
-    const validRows = isNaN(rows) ? 4 : rows;
-    const totalSlots = validCols * validRows;
-
-    const sourceButtons = screen.buttons || [];
-    const buttons: (ButtonConfig | null)[] = [];
-
-    for (let i = 0; i < totalSlots; i++) {
-      if (i < sourceButtons.length) {
-        buttons.push(sourceButtons[i]);
-      } else {
-        buttons.push(null);
-      }
+  public getMediaSourceName(screen: ScreenConfig): string | null {
+    if (screen.type !== 'media') {
+      return null;
     }
-    return buttons;
+    return screen.config.source?.name ?? null;
   }
 
   // Button Action Handler
   public onButtonTrigger(button: ButtonConfig) {
     console.log('Button action triggered:', button);
-    this.companionService.sendAction(button.type, button.payload);
+    this.companionService.sendAction(button.action.type, button.action.payload);
   }
 
   // Custom Carousel Touch/Scroll Tracking

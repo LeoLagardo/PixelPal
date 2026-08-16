@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { CompanionService, PairedDevice } from '../services/companion.service';
+import { CompanionService } from '../services/companion.service';
+import { PairedDevice } from '../models';
 import { NgIf } from '@angular/common';
 import {
   IonHeader,

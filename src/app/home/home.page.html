@@ -106,38 +106,53 @@
             <!-- Content Area inside Slide -->
             <div class="slide-content-area">
               <!-- Type 1: Grid -->
-              <div
-                *ngIf="screen.type === 'grid'"
-                class="grid-layout-container"
-                [ngStyle]="getGridStyles(screen)"
-              >
+              
+              @if (screen.type === 'grid') {
                 <div
-                  class="grid-cell"
-                  *ngFor="let button of getGridButtons(screen)"
+                  class="grid-layout-container"
+                  [ngStyle]="screen | gridStyles"
                 >
-                  <ng-container *ngIf="button">
-                    <app-deck-button
-                      [button]="button"
-                      (triggerAction)="onButtonTrigger($event)"
-                    ></app-deck-button>
-                  </ng-container>
-                  <div class="empty-grid-slot" *ngIf="!button"></div>
+                  <div
+                    class="grid-cell"
+                    *ngFor="let button of screen | gridButtons"
+                  >
+                    @if (button) {
+
+                      <app-deck-button
+                        [button]="button"
+                        (triggerAction)="onButtonTrigger($event)"
+                      ></app-deck-button>
+                    }
+                    <div class="empty-grid-slot" *ngIf="!button"></div>
+                  </div>
                 </div>
-              </div>
+              }
 
-              <!-- Type 2: Screensaver -->
-              @if (screen.type === 'screensaver') {
+              <!-- Type 2: Media -->
+              @if (screen.type === 'media') {
+                <div
+                  class="media-layout-container"
+                  [class.skull-animation]="screen.id === 'skull-animation'"
+                >
+                  @switch (screen.id) {
+                    @case ('app-companion-robot') {
+                      <app-companion-robot></app-companion-robot>
+                    }
+                
+                    @case ('app-heart-animation') {
+                      <app-pixel-heart></app-pixel-heart>
+                    }
+                
+                    @case ('app-clock') {
+                      <app-screensaver-clock></app-screensaver-clock>
+                    }
 
-                <div class="screensaver-layout-container">
-                  @if (screen.id === 'f6e299b3-f128-4252-890c-a3b4e0ade3e3') {
-                    <app-screensaver-clock></app-screensaver-clock>
-                  } @else if (screen.id === 'f6e299b3-f128-4252-890c-a3b4e0adexxx') {
-                    <app-pixel-heart></app-pixel-heart>
-                  } @else if (screen.id === 'app-companion-robot') {
-                    <app-companion-robot></app-companion-robot>
+                    @case ('skull-animation') {
+                      <img src="../../assets/animations/PixelSkull.svg" alt="Skull Animation"
+                      style="height: 400px;width: 500px;">
+                    }
                   }
                 </div>
-                
               }
 
             </div>

@@ -6,22 +6,8 @@ import {
   OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonConfig } from '../services/companion.service';
+import { ButtonConfig } from '../models';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { addIcons } from 'ionicons';
-
-import {
-  logoChrome,
-  logoDiscord,
-  logoGoogle,
-  logoYoutube,
-  logoSteam,
-  playCircleOutline,
-  ellipseOutline,
-  squareOutline,
-  triangleOutline,
-  helpCircleOutline
-} from 'ionicons/icons';
 
 @Component({
   selector: 'app-deck-button',
@@ -40,7 +26,7 @@ import {
       <div class="button-inner">
 
         <div class="icon-container">
-          <i [class]="button.icon_class"></i>
+          <i [class]="button.icon" [ngStyle]="color ? { 'color': color } : null"></i>
         </div>
 
         <span
@@ -172,6 +158,9 @@ export class DeckButtonComponent implements OnInit {
   @Input()
   button!: ButtonConfig;
 
+  @Input()
+  color?: string | null = '#b1b1b1';
+
   @Output()
   triggerAction = new EventEmitter<ButtonConfig>();
 
@@ -195,20 +184,7 @@ export class DeckButtonComponent implements OnInit {
    */
   private readonly MOVE_THRESHOLD = 10;
 
-  constructor() {
-    addIcons({
-      logoChrome,
-      logoDiscord,
-      logoGoogle,
-      logoYoutube,
-      logoSteam,
-      playCircleOutline,
-      ellipseOutline,
-      squareOutline,
-      triangleOutline,
-      helpCircleOutline
-    });
-  }
+  constructor() { }
 
   ngOnInit(): void {}
 
