@@ -1,0 +1,139 @@
+/* =====================================================
+   Theme: Aurora (Gemini Neural Glow)
+   Applied via: .theme-aurora on .grid-layout-container
+
+   Specificity note:
+   Angular's emulated encapsulation adds [_ngcontent-xxx] to component
+   styles, giving them 0,2,0 specificity. By including `app-deck-button`
+   in our selectors we reach 0,2,1 (2 classes + 1 element), which wins.
+   ===================================================== */
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.theme-aurora {
+  /* Sleek dark canvas background */
+  background: #0b0e17 !important;
+  isolation: isolate;
+
+  app-deck-button {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* --- Button outer frame: provides the rotating conic-gradient border --- */
+  app-deck-button .deck-button-element {
+    position: relative;
+    padding: 2px !important; /* Border thickness */
+    border: none !important;
+    border-radius: 16px !important;
+    background: conic-gradient(
+      from var(--gradient-angle),
+      #4285f4 0%,
+      #9b72cb 20%,
+      #d96570 40%,
+      #f4b400 60%,
+      #1aa260 80%,
+      #4285f4 100%
+    ) !important;
+    animation: rotate-aurora-border 4s linear infinite;
+    overflow: visible !important;
+    box-shadow: none !important;
+    transform-origin: center;
+    transition: transform 0.2s ease;
+  }
+
+  /* Remove any ::before mask interference */
+  app-deck-button .deck-button-element::before {
+    display: none !important;
+  }
+
+  /* --- Outer neon blur aura radiating outward behind the border --- */
+  app-deck-button .deck-button-element::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    background: conic-gradient(
+      from var(--gradient-angle),
+      #4285f4 0%,
+      #9b72cb 20%,
+      #d96570 40%,
+      #f4b400 60%,
+      #1aa260 80%,
+      #4285f4 100%
+    );
+    animation: rotate-aurora-border 4s linear infinite;
+    filter: blur(12px);
+    opacity: 0.75;
+    z-index: -1;
+    pointer-events: none;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* --- Solid dark interior: completely covers and masks the button center --- */
+  app-deck-button .button-inner {
+    width: 100% !important;
+    height: 100% !important;
+    background: #121620 !important; /* Solid dark center matching Gemini theme */
+    border-radius: 14px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* --- Hover & active states --- */
+  app-deck-button .deck-button-element:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  app-deck-button .deck-button-element:hover::after {
+    filter: blur(16px);
+    opacity: 0.95;
+  }
+
+  app-deck-button .deck-button-element:active,
+  app-deck-button .deck-button-element.is-active {
+    transform: scale(0.96);
+  }
+
+  app-deck-button .deck-button-element.is-active::after {
+    filter: blur(14px);
+    opacity: 1;
+  }
+
+  /* --- Typography & Icons (clean and crisp) --- */
+  app-deck-button .icon-container {
+    color: #f1f5f9;
+  }
+
+  app-deck-button .button-label {
+    color: #cbd5e1;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- Empty slot styling --- */
+  .empty-grid-slot {
+    background: rgba(18, 22, 32, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    opacity: 0.5;
+  }
+}
+
+@keyframes rotate-aurora-border {
+  to {
+    --gradient-angle: 360deg;
+  }
+}

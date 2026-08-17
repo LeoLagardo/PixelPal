@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
+import { OrientationService } from '../services/orientation.service';
 import { ScreenConfig, ButtonConfig, PairedDevice } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -84,11 +85,17 @@ export class HomePage implements OnInit, OnDestroy {
   public isInactive = false;
   private readonly INACTIVITY_MS = 5000;
 
-  constructor(public companionService: CompanionService, private router: Router) {
+  constructor(
+    public companionService: CompanionService,
+    private router: Router,
+    private orientationService: OrientationService
+  ) {
     addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline });
   }
 
   ngOnInit() {
+    this.orientationService.lockLandscape();
+
     this.subs.add(
       this.companionService.pairedDevice$.subscribe((device) => {
         this.pairedDevice = device;
@@ -120,11 +127,20 @@ export class HomePage implements OnInit, OnDestroy {
     );
   }
 
+  ionViewWillEnter() {
+    this.orientationService.lockLandscape();
+  }
+
+  ionViewWillLeave() {
+    this.orientationService.unlock();
+  }
+
   ngAfterViewInit() {
     this.setupActivityListener();
   }
 
   ngOnDestroy() {
+    this.orientationService.unlock();
     this.subs.unsubscribe();
   }
 

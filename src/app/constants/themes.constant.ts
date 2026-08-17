@@ -8,5 +8,6 @@ export const GRADIENT_THEMES: Record<string, string> = {
 };
 
 export const THEMES = [
-  "synthwave-sunset"
-]
+  "synthwave-sunset",
+  "aurora"
+];

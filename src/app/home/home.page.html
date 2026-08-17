@@ -102,25 +102,28 @@
                     <!-- Type 2: Media -->
                     @if (screen.type === 'media') {
                       <div
-                        class="media-layout-container"
-                        [class.skull-animation]="screen.id === 'skull-animation'"
-                      >
-                        @switch (screen.id) {
-                          @case ('app-companion-robot') {
-                            <app-companion-robot></app-companion-robot>
+                        class="media-layout-container">
+                        @if (screen.config.media_type === 'image' && screen.config.source.type === 'url') {
+                          @if (screen.config.source.url) {
+                            <img
+                              [src]="screen.config.source.url"
+                              [alt]="screen.config.source.name || screen.name || 'Media Image'"
+                              class="media-image"
+                            />
                           }
+                        } @else {
+                          @switch (screen.id) {
+                            @case ('app-companion-robot') {
+                              <app-companion-robot></app-companion-robot>
+                            }
 
-                          @case ('app-heart-animation') {
-                            <app-pixel-heart></app-pixel-heart>
-                          }
+                            @case ('app-heart-animation') {
+                              <app-pixel-heart></app-pixel-heart>
+                            }
 
-                          @case ('app-clock') {
-                            <app-screensaver-clock></app-screensaver-clock>
-                          }
-
-                          @case ('skull-animation') {
-                            <img src="../../assets/animations/PixelSkull.svg" alt="Skull Animation"
-                            style="height: 400px;width: 500px;">
+                            @case ('tpl-media-clock') {
+                              <app-screensaver-clock></app-screensaver-clock>
+                            }
                           }
                         }
                       </div>

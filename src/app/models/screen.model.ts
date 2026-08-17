@@ -2,7 +2,9 @@ import { ButtonConfig } from './button.model';
 
 export interface MediaSource {
   type: string;
-  name: string;
+  name?: string;
+  url?: string;
+  value?: string;
 }
 
 export interface Config {
