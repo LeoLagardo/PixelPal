@@ -96,50 +96,64 @@ type TransitionStyle = 'soft' | 'snap' | 'melt' | 'blink';
             </div>
 
             <!-- Nervous sweat -->
-            <div class="sweat" *ngIf="currentState === 'nervous' || currentState === 'frustrated'">
-              <span class="sweat-drop sweat-left"></span>
-              <span class="sweat-drop sweat-right"></span>
-            </div>
+            @if (currentState === 'nervous' || currentState === 'frustrated') {
+              <div class="sweat">
+                <span class="sweat-drop sweat-left"></span>
+                <span class="sweat-drop sweat-right"></span>
+              </div>
+            }
 
             <!-- Sleep Zzz -->
-            <div class="sleep-particles" *ngIf="currentState === 'sleepy'">
-              <span
-                *ngFor="let z of sleepZs"
-                class="sleep-z"
-                [style.--delay]="z.delay + 's'"
-                [style.--x]="z.x + 'px'"
-                [style.--y]="z.y + 'px'"
-              >Z</span>
-            </div>
+            @if (currentState === 'sleepy') {
+              <div class="sleep-particles">
+                @for (z of sleepZs; track $index) {
+                  <span
+                    class="sleep-z"
+                    [style.--delay]="z.delay + 's'"
+                    [style.--x]="z.x + 'px'"
+                    [style.--y]="z.y + 'px'"
+                  >Z</span>
+                }
+              </div>
+            }
 
             <!-- Happy / laughing sparkles -->
-            <div class="sparkles" *ngIf="currentState === 'happy' || currentState === 'laughing'">
-              <div
-                *ngFor="let s of sparkles"
-                class="sparkle"
-                [style.--sx]="s.x + '%'"
-                [style.--sy]="s.y + '%'"
-                [style.--delay]="s.delay + 's'"
-              ></div>
-            </div>
+            @if (currentState === 'happy' || currentState === 'laughing') {
+              <div class="sparkles">
+                @for (s of sparkles; track $index) {
+                  <div
+                    class="sparkle"
+                    [style.--sx]="s.x + '%'"
+                    [style.--sy]="s.y + '%'"
+                    [style.--delay]="s.delay + 's'"
+                  ></div>
+                }
+              </div>
+            }
 
             <!-- Surprised shock lines -->
-            <div class="shock-lines" *ngIf="currentState === 'surprised'">
-              <div class="shock shock-1"></div>
-              <div class="shock shock-2"></div>
-              <div class="shock shock-3"></div>
-              <div class="shock shock-4"></div>
-            </div>
+            @if (currentState === 'surprised') {
+              <div class="shock-lines">
+                <div class="shock shock-1"></div>
+                <div class="shock shock-2"></div>
+                <div class="shock shock-3"></div>
+                <div class="shock shock-4"></div>
+              </div>
+            }
 
             <!-- Nervous / frustrated sweat flickers -->
-            <div class="nervous-marks" *ngIf="currentState === 'nervous' || currentState === 'frustrated'">
-              <span>•</span><span>•</span><span>•</span>
-            </div>
+            @if (currentState === 'nervous' || currentState === 'frustrated') {
+              <div class="nervous-marks">
+                <span>•</span><span>•</span><span>•</span>
+              </div>
+            }
 
             <!-- Sad tear -->
-            <div class="tear" *ngIf="currentState === 'sad'">
-              <div class="tear-drop"></div>
-            </div>
+            @if (currentState === 'sad') {
+              <div class="tear">
+                <div class="tear-drop"></div>
+              </div>
+            }
 
             <!-- Expression transition shimmer -->
             <div class="transition-shimmer" [class.active]="isTransitioning"></div>
@@ -153,13 +167,14 @@ type TransitionStyle = 'soft' | 'snap' | 'melt' | 'blink';
       <!--
       <div class="label">{{ currentState }}</div>
       <div class="controls">
-        <button
-          *ngFor="let state of allStates"
-          [class.active]="currentState === state"
-          (click)="setState(state)"
-        >
-          {{ state }}
-        </button>
+        @for (state of allStates; track state) {
+          <button
+            [class.active]="currentState === state"
+            (click)="setState(state)"
+          >
+            {{ state }}
+          </button>
+        }
         <button
           class="random-btn"
           (click)="toggleRandomizer()"

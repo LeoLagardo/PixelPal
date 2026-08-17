@@ -25,18 +25,18 @@ const CENTER_COL = 5;
   template: `
     <div class="heart-container">
       <div class="pixel-heart">
-        <div
-          *ngFor="let row of pixelRows; let r = index"
-          class="pixel-row"
-        >
-          <div
-            *ngFor="let pixel of row; let c = index"
-            class="pixel"
-            [class.active]="pixel !== null"
-            [style.--base-color]="pixel"
-            [style.--delay]="getWaveDelay(r, c) + 's'"
-          ></div>
-        </div>
+        @for (row of pixelRows; track $index; let r = $index) {
+          <div class="pixel-row">
+            @for (pixel of row; track $index; let c = $index) {
+              <div
+                class="pixel"
+                [class.active]="pixel !== null"
+                [style.--base-color]="pixel"
+                [style.--delay]="getWaveDelay(r, c) + 's'"
+              ></div>
+            }
+          </div>
+        }
       </div>
     </div>
   `,

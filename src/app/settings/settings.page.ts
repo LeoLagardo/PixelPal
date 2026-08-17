@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
 import { PairedDevice } from '../models';
-import { NgIf } from '@angular/common';
 import {
   IonHeader,
   IonToolbar,
@@ -46,26 +45,26 @@ import {
           <ion-card-content>
             <h3 class="section-title">Paired Device</h3>
 
-            <div *ngIf="device; else noDevice" class="device-info">
-              <div class="device-details">
-                <span class="device-name">{{ device.name || 'PC Connection' }}</span>
-                <span class="device-address">ws://{{ device.ip }}:{{ device.port }}</span>
-                <span class="device-token">Token: {{ device.token }}</span>
+            @if (device) {
+              <div class="device-info">
+                <div class="device-details">
+                  <span class="device-name">{{ device.name || 'PC Connection' }}</span>
+                  <span class="device-address">ws://{{ device.ip }}:{{ device.port }}</span>
+                  <span class="device-token">Token: {{ device.token }}</span>
+                </div>
+                <ion-button color="danger" fill="outline" size="small" (click)="forgetDevice()">
+                  <ion-icon name="trash-outline" slot="start"></ion-icon>
+                  Forget
+                </ion-button>
               </div>
-              <ion-button color="danger" fill="outline" size="small" (click)="forgetDevice()">
-                <ion-icon name="trash-outline" slot="start"></ion-icon>
-                Forget
-              </ion-button>
-            </div>
-
-            <ng-template #noDevice>
+            } @else {
               <div class="no-device-state">
                 <p>No PC paired currently.</p>
                 <ion-button size="small" color="primary" (click)="goToPairing()">
                   Pair a Device
                 </ion-button>
               </div>
-            </ng-template>
+            }
           </ion-card-content>
         </ion-card>
 
@@ -180,7 +179,6 @@ import {
     }
   `],
   imports: [
-    NgIf,
     IonHeader,
     IonToolbar,
     IonTitle,

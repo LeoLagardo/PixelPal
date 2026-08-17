@@ -29,12 +29,11 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
           <i [class]="button.icon" [ngStyle]="color ? { 'color': color } : null"></i>
         </div>
 
-        <span
-          class="button-label"
-          *ngIf="button.label"
-        >
-          {{ button.label }}
-        </span>
+        @if (button.label) {
+          <span class="button-label">
+            {{ button.label }}
+          </span>
+        }
 
       </div>
     </button>

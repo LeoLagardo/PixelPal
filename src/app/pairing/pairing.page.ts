@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
 import { FormsModule } from '@angular/forms';
-import { NgIf } from '@angular/common';
 import {
   IonHeader,
   IonToolbar,
@@ -67,25 +66,27 @@ import jsQR from 'jsqr';
             </div>
 
             <!-- JSON String Input Area -->
-            <div *ngIf="mode === 'json'">
-              <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                <ion-textarea
-                  [(ngModel)]="rawJson"
-                  placeholder='Paste the pairing JSON string here: {"token": "...", "port": 8080, "ip": "192.168.1.100"}'
-                  rows="4"
-                ></ion-textarea>
-              </ion-item>
+            @if (mode === 'json') {
+              <div>
+                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+                  <ion-textarea
+                    [(ngModel)]="rawJson"
+                    placeholder='Paste the pairing JSON string here: {"token": "...", "port": 8080, "ip": "192.168.1.100"}'
+                    rows="4"
+                  ></ion-textarea>
+                </ion-item>
 
-              <!-- QR Scanning Button -->
-              <ion-button expand="block" color="secondary" (click)="startScanning()" class="ion-margin-bottom" style="--border-radius: 8px; font-weight: bold;">
-                <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-                Scan QR Code
-              </ion-button>
+                <!-- QR Scanning Button -->
+                <ion-button expand="block" color="secondary" (click)="startScanning()" class="ion-margin-bottom" style="--border-radius: 8px; font-weight: bold;">
+                  <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+                  Scan QR Code
+                </ion-button>
 
-              <ion-button expand="block" (click)="pairWithJson()" color="primary" class="action-btn">
-                Pair using JSON
-              </ion-button>
-            </div>
+                <ion-button expand="block" (click)="pairWithJson()" color="primary" class="action-btn">
+                  Pair using JSON
+                </ion-button>
+              </div>
+            }
 
             <!-- Manual Input Fields -->
             @if (mode === 'manual') {
@@ -139,30 +140,32 @@ import jsQR from 'jsqr';
       </div>
 
       <!-- QR Scanner Overlay -->
-      <div *ngIf="scanning" class="scanner-overlay">
-        <div class="scanner-header">
-          <span class="scanner-title">Scan QR Code</span>
-          <ion-button fill="clear" color="light" (click)="stopScanning()" class="scanner-close-btn">
-            <ion-icon name="close-outline" slot="icon-only"></ion-icon>
-          </ion-button>
-        </div>
-        <div class="scanner-viewport">
-          <video #videoElement autoplay playsinline muted class="scanner-video"></video>
-          <canvas #canvasElement style="display: none;"></canvas>
+      @if (scanning) {
+        <div class="scanner-overlay">
+          <div class="scanner-header">
+            <span class="scanner-title">Scan QR Code</span>
+            <ion-button fill="clear" color="light" (click)="stopScanning()" class="scanner-close-btn">
+              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+          <div class="scanner-viewport">
+            <video #videoElement autoplay playsinline muted class="scanner-video"></video>
+            <canvas #canvasElement style="display: none;"></canvas>
 
-          <!-- Animated Laser overlay -->
-          <div class="scanner-box">
-            <div class="scanner-laser"></div>
-            <div class="corner top-left"></div>
-            <div class="corner top-right"></div>
-            <div class="corner bottom-left"></div>
-            <div class="corner bottom-right"></div>
+            <!-- Animated Laser overlay -->
+            <div class="scanner-box">
+              <div class="scanner-laser"></div>
+              <div class="corner top-left"></div>
+              <div class="corner top-right"></div>
+              <div class="corner bottom-left"></div>
+              <div class="corner bottom-right"></div>
+            </div>
+          </div>
+          <div class="scanner-instructions">
+            Align the QR code from the desktop app within the square to scan.
           </div>
         </div>
-        <div class="scanner-instructions">
-          Align the QR code from the desktop app within the square to scan.
-        </div>
-      </div>
+      }
 
       <ion-toast
         [isOpen]="showToast"
@@ -314,7 +317,6 @@ import jsQR from 'jsqr';
   `],
   imports: [
     FormsModule,
-    NgIf,
     IonHeader,
     IonToolbar,
     IonTitle,
