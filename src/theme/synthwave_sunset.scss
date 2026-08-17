@@ -1,0 +1,50 @@
+/* =====================================================
+   Theme: Synthwave Sunset
+   Applied via: .theme-synthwave-sunset on .grid-layout-container
+
+   Specificity note:
+   Angular's emulated encapsulation adds [_ngcontent-xxx] to component
+   styles, giving them 0,2,0 specificity. By including `app-deck-button`
+   in our selectors we reach 0,2,1 (2 classes + 1 element), which wins.
+   ===================================================== */
+
+.theme-synthwave-sunset {
+  /* Grid background — use `background` not `background-color` for gradients */
+  background: linear-gradient(135deg, #180026 0%, #4a0040 40%, #ff0055 75%, #ff7700 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(145deg, rgba(60, 10, 50, 0.8) 0%, rgba(30, 5, 40, 0.85) 100%);
+    border: 1.5px solid rgba(255, 0, 110, 0.45);
+    border-radius: 9px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(255, 0, 110, 0.22), inset 0 0 12px rgba(255, 110, 0, 0.1);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(145deg, rgba(120, 20, 80, 0.9) 0%, rgba(70, 10, 60, 0.9) 100%);
+    border-color: #ff0077;
+    box-shadow: 0 0 24px rgba(255, 0, 110, 0.6), 0 0 12px rgba(255, 120, 0, 0.4);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #ff3388;
+    filter: drop-shadow(0 0 8px rgba(255, 51, 136, 0.7));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #ffd166;
+    text-shadow: 0 0 6px rgba(255, 110, 0, 0.4);
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(255, 0, 110, 0.25);
+  }
+}

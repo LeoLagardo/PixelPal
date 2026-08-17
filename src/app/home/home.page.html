@@ -1,34 +1,5 @@
 <div class="main-layout">
-  <!-- Thin persistent top status bar overlay -->
-  <div class="top-status-bar" #hideable>
-    <div class="status-left">
-      <span
-        class="status-dot"
-        [ngClass]="{
-          'is-connected': connectionState === 'connected',
-          'is-connecting': connectionState === 'connecting',
-          'is-disconnected': connectionState === 'disconnected'
-        }"
-      ></span>
-      <span class="pc-name" (click)="forceReconnect()">
-        {{ pairedDevice ? (pairedDevice.name || 'PC Connecting...') : 'No PC Paired' }}
-      </span>
-      <span class="connection-action-label" *ngIf="connectionState !== 'connected'" (click)="forceReconnect()">
-        (Reconnect)
-      </span>
-    </div>
-    <div class="status-right">
-      <button class="status-icon-btn" (click)="forgetDevice()" title="Disconnect/Unpair">
-        <ion-icon name="unlink-outline"></ion-icon>
-        <span class="btn-text">Disconnect</span>
-      </button>
-      <button class="status-icon-btn" (click)="goToSettings()" title="Settings">
-        <ion-icon name="settings-outline"></ion-icon>
-      </button>
-    </div>
-  </div>
-
-  <!-- Content Slot -->
+  <!-- Content Body -->
   <div class="content-body">
     <!-- View 1: Not paired yet -->
     <div class="unpaired-container" *ngIf="!pairedDevice">
@@ -73,6 +44,7 @@
         <button
           *ngIf="currentScreenIndex > 0"
           class="carousel-nav-btn nav-left"
+          [class.is-dimmed]="isInactive"
           (click)="goToPrevScreen()"
           #hideable
         >
@@ -82,6 +54,7 @@
         <button
           *ngIf="currentScreenIndex < screens.length - 1"
           class="carousel-nav-btn nav-right"
+          [class.is-dimmed]="isInactive"
           (click)="goToNextScreen()"
           #hideable
         >
@@ -110,6 +83,7 @@
               @if (screen.type === 'grid') {
                 <div
                   class="grid-layout-container"
+                  [ngClass]="screen | gridTheme"
                   [ngStyle]="screen | gridStyles"
                 >
                   <div
@@ -159,18 +133,64 @@
           </div>
         </div>
 
-        <!-- Dot indicator at bottom of carousel -->
-        @if (screens.length > 1) {
-          <div class="carousel-dots-indicator" #hideable>
-            @for (s of screens; track $index) {
-              <span
-                class="indicator-dot"
-                [ngClass]="{ 'is-active': $index === currentScreenIndex }"
-                (click)="scrollToScreen($index)"
-              ></span>
+        <!-- Bottom Bar with status, screen indicators, and action buttons -->
+        <div class="bottom-bar" #hideable [class.is-dimmed]="isInactive">
+          <div class="bottom-bar-left">
+            <span
+              class="status-dot"
+              [ngClass]="{
+                'is-connected': connectionState === 'connected',
+                'is-connecting': connectionState === 'connecting',
+                'is-disconnected': connectionState === 'disconnected'
+              }"
+            ></span>
+            <span class="pc-name" (click)="forceReconnect()">
+              {{ pairedDevice ? (pairedDevice.name || 'PC Connecting...') : 'No PC Paired' }}
+            </span>
+            <button
+              class="bottom-icon-btn reconnect-btn"
+              *ngIf="connectionState !== 'connected'"
+              (click)="forceReconnect()"
+              title="Reconnect"
+            >
+              <ion-icon name="refresh-outline" [class.spinning]="connectionState === 'connecting'"></ion-icon>
+              <span class="btn-text">Reconnect</span>
+            </button>
+          </div>
+
+          <div class="bottom-bar-center">
+            @if (screens.length > 1) {
+              <div class="carousel-dots-indicator">
+                @for (s of screens; track $index) {
+                  <span
+                    class="indicator-dot"
+                    [ngClass]="{ 'is-active': $index === currentScreenIndex }"
+                    (click)="scrollToScreen($index)"
+                  ></span>
+                }
+              </div>
             }
           </div>
-        }
+
+          <div class="bottom-bar-right">
+            <button
+              class="bottom-icon-btn"
+              (click)="forgetDevice()"
+              title="Disconnect / Unpair"
+            >
+              <ion-icon name="unlink-outline"></ion-icon>
+              <span class="btn-text">Disconnect</span>
+            </button>
+            <button
+              class="bottom-icon-btn"
+              (click)="goToSettings()"
+              title="Settings"
+            >
+              <ion-icon name="settings-outline"></ion-icon>
+              <!-- <span class="btn-text">Settings</span> -->
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

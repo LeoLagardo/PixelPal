@@ -20,6 +20,7 @@ export interface Config {
     url: string;
     name?: string;
   };
+  theme?: string;
 }
 
 export interface GridScreen {

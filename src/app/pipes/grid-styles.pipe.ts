@@ -23,6 +23,10 @@ export class GridStylesPipe implements PipeTransform {
       'grid-template-rows': `repeat(${validRows}, 1fr)`
     };
 
+    if (screen.config.theme) {
+      return styles;
+    }
+
     if (bgConf?.type === 'image' && bgConf?.name && Object.prototype.hasOwnProperty.call(GRADIENT_THEMES, bgConf.name)) {
       styles['background'] = GRADIENT_THEMES[bgConf.name];
     } else if (bgConf?.type === 'color') {

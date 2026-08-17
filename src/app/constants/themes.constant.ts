@@ -6,3 +6,7 @@ export const GRADIENT_THEMES: Record<string, string> = {
   'dark-texture': 'linear-gradient(160deg, #0B0B0D 0%, #171719 40%, #1F1F22 100%)',
   'stars': 'radial-gradient(ellipse at 20% 30%, #ffffff22 0%, transparent 40%), radial-gradient(ellipse at 70% 60%, #ffffff18 0%, transparent 35%), #0B0B0D'
 };
+
+export const THEMES = [
+  "synthwave-sunset"
+]

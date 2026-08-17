@@ -21,7 +21,8 @@ import { addIcons } from 'ionicons';
 import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
-import { GridStylesPipe, GridButtonsPipe } from '../pipes';
+import { GridStylesPipe, GridButtonsPipe, GridThemePipe } from '../pipes';
+
 import { GRADIENT_THEMES } from '../constants/themes.constant';
 export { GRADIENT_THEMES };
 
@@ -35,6 +36,7 @@ export { GRADIENT_THEMES };
     FormsModule,
     GridStylesPipe,
     GridButtonsPipe,
+    GridThemePipe,
     DeckButtonComponent,
     ScreensaverClockComponent,
     PixelHeartComponent,
@@ -79,7 +81,8 @@ export class HomePage implements OnInit, OnDestroy {
 
   private subs = new Subscription();
 
-  private readonly INACTIVITY_MS = 2000;
+  public isInactive = false;
+  private readonly INACTIVITY_MS = 5000;
 
   constructor(public companionService: CompanionService, private router: Router) {
     addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline });
@@ -202,49 +205,37 @@ export class HomePage implements OnInit, OnDestroy {
 
   private setupActivityListener() {
     const activityEvents$ = merge(
-      fromEvent(document, 'touchstart'),
-      fromEvent(document, 'click'),
-      fromEvent(document, 'mousemove'),
-      fromEvent(document, 'keydown')
+      fromEvent(document, 'touchstart', { passive: true }),
+      fromEvent(document, 'click', { passive: true }),
+      fromEvent(document, 'mousemove', { passive: true }),
+      fromEvent(document, 'keydown', { passive: true })
     );
 
-    // ✅ FIX 1 & 3: Single subscription handles both show AND hide
-    // ✅ FIX 2: Runs in AfterViewInit so @ViewChildren is populated
     const inactivitySub = activityEvents$.pipe(
       // Show immediately on any activity
       tap(() => this.showElements()),
-      // Reset timer on every activity event
+      // Reset timer on every activity event (5 seconds)
       switchMap(() => timer(this.INACTIVITY_MS)),
       // Start timer immediately on init
       startWith(0),
-      // Hide when timer fires
+      // Dim when timer fires
       tap(() => this.hideElements())
     ).subscribe();
 
-    // ✅ All subscriptions tracked in one place
     this.subs.add(inactivitySub);
   }
 
   private hideElements() {
-    this.hideableDivs.forEach(div =>
-      div.nativeElement.classList.add('hidden')
+    this.isInactive = true;
+    this.hideableDivs?.forEach(div =>
+      div.nativeElement.classList.add('is-dimmed')
     );
-    this.setCarouselPadding('0')
   }
 
   private showElements() {
-    this.hideableDivs.forEach(div =>
-      div.nativeElement.classList.remove('hidden')
+    this.isInactive = false;
+    this.hideableDivs?.forEach(div =>
+      div.nativeElement.classList.remove('is-dimmed')
     );
-    this.setCarouselPadding('12px 16px')
-  }
-
-  private setCarouselPadding(padding: string) {
-    const carousels = document.querySelectorAll<HTMLElement>('.carousel-slide');
-    if (carousels) {
-      carousels.forEach(carousel => {
-        carousel.style.padding = `${padding}`;
-      });
-    }
   }
 }
