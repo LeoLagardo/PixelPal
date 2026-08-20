@@ -15,8 +15,6 @@ export class GridThemePipe implements PipeTransform {
 
     const theme = screen.config.theme;
     if (theme && THEMES.includes(theme)) {
-      console.log(theme);
-      
       return `theme-${theme}`;
     }
 

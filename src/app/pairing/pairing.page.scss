@@ -1,0 +1,336 @@
+.pairing-container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: 10px;
+}
+
+.mode-selector {
+  display: flex;
+  justify-content: space-around;
+  background: #1e1e1e;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.mode-btn {
+  flex: 1;
+  --padding-start: 6px;
+  --padding-end: 6px;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.input-item {
+  --background: #1a1a1a;
+  --color: #ffffff;
+  --border-radius: 8px;
+}
+
+.ports-row {
+  display: flex;
+  gap: 10px;
+}
+
+.flex-item {
+  flex: 1;
+}
+
+.action-btn {
+  margin-top: 10px;
+  --border-radius: 8px;
+  font-weight: bold;
+}
+
+/* Radar / Network Scan Section */
+.scan-action-box {
+  margin-bottom: 16px;
+}
+
+.radar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  position: relative;
+}
+
+.radar-pulse {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(56, 128, 255, 0.25);
+  position: absolute;
+  animation: pulse-ring 1.8s infinite ease-out;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.radar-icon {
+  font-size: 32px;
+  color: #3880ff;
+  position: relative;
+  z-index: 2;
+}
+
+.radar-text {
+  color: #a0a0a0;
+  font-size: 12.5px;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.device-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.results-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3880ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.discovered-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.discovered-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.discovered-icon-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: rgba(56, 128, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pc-icon {
+  font-size: 20px;
+  color: #3880ff;
+}
+
+.discovered-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-title {
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.pc-ip {
+  color: #a0a0a0;
+  font-size: 12px;
+  margin-top: 2px;
+  font-family: monospace;
+}
+
+.pc-ports {
+  color: #666666;
+  font-size: 10.5px;
+  margin-top: 2px;
+}
+
+.discovered-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.token-badge {
+  font-size: 10px;
+  padding: 3px 6px;
+}
+
+.empty-scan-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+.empty-subtext {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.token-prompt-card {
+  background: #252525;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+  border: 1px solid #3880ff;
+}
+
+.prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Scanner Full Screen Overlay styles */
+.scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #ffffff;
+}
+
+.scanner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.scanner-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.scanner-close-btn {
+  --padding-end: 0;
+  --padding-start: 0;
+  margin: 0;
+}
+
+.scanner-viewport {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+}
+
+.scanner-box {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.scanner-laser {
+  width: 100%;
+  height: 2px;
+  background-color: #3880ff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-shadow: 0 0 8px 2px #3880ff;
+  animation: laser-scan 2.5s infinite linear;
+}
+
+@keyframes laser-scan {
+  0% {
+    top: 0;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0;
+  }
+}
+
+.corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #3880ff;
+  border-style: solid;
+}
+
+.top-left {
+  top: -2px;
+  left: -2px;
+  border-width: 4px 0 0 4px;
+  border-top-left-radius: 10px;
+}
+
+.top-right {
+  top: -2px;
+  right: -2px;
+  border-width: 4px 4px 0 0;
+  border-top-right-radius: 10px;
+}
+
+.bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 4px 4px;
+  border-bottom-left-radius: 10px;
+}
+
+.bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 4px 4px 0;
+  border-bottom-right-radius: 10px;
+}
+
+.scanner-instructions {
+  padding: 24px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 14px;
+  color: #cccccc;
+}

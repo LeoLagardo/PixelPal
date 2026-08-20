@@ -1,0 +1,274 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="dark">
+    <ion-title>Pair with PC</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" style="--background: #121212;">
+  <div class="pairing-container">
+    <!-- Main instructions card -->
+    <ion-card color="dark">
+      <ion-card-header>
+        <ion-card-title>Pair Device</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p style="margin-bottom: 16px; color: #a0a0a0; font-size: 13.5px; line-height: 1.4;">
+          Connect your device with the StreamDeck Companion desktop app. Paste the pairing JSON, scan a QR code, or use network auto-scan.
+        </p>
+
+        <!-- Mode selector tabs/buttons -->
+        <div class="mode-selector">
+          <ion-button
+            fill="clear"
+            [color]="mode === 'json' ? 'primary' : 'medium'"
+            (click)="setMode('json')"
+            class="mode-btn"
+          >
+            <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+            QR / JSON
+          </ion-button>
+
+          <ion-button
+            fill="clear"
+            [color]="mode === 'scan' ? 'primary' : 'medium'"
+            (click)="setMode('scan')"
+            class="mode-btn"
+          >
+            <ion-icon name="radio-outline" slot="start"></ion-icon>
+            Auto Scan
+          </ion-button>
+
+          <ion-button
+            fill="clear"
+            [color]="mode === 'manual' ? 'primary' : 'medium'"
+            (click)="setMode('manual')"
+            class="mode-btn"
+          >
+            <ion-icon name="server-outline" slot="start"></ion-icon>
+            Manual
+          </ion-button>
+        </div>
+
+        <!-- JSON String Input Area -->
+        @if (mode === 'json') {
+          <div>
+            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+              <ion-textarea
+                [(ngModel)]="rawJson"
+                (ionInput)="onJsonInput($event)"
+                placeholder='Paste pairing JSON: {"token": "...", "ip": "192.168.1.50", "port": 53535, "udp_port": 53537, "device_name": "My PC"}'
+                [rows]="5"
+                [autoGrow]="true"
+              ></ion-textarea>
+            </ion-item>
+
+            <!-- QR Scanning Button -->
+            <ion-button expand="block" color="secondary" (click)="startScanning()" class="ion-margin-bottom action-btn">
+              <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+              Scan QR Code via Camera
+            </ion-button>
+
+            <ion-button expand="block" (click)="pairWithJson()" color="primary" class="action-btn">
+              Pair using JSON
+            </ion-button>
+          </div>
+        }
+
+        <!-- Network Scan Mode -->
+        @if (mode === 'scan') {
+          <div class="scan-section">
+            <div class="scan-action-box">
+              <ion-button
+                expand="block"
+                color="primary"
+                [disabled]="isScanning"
+                (click)="triggerNetworkScan()"
+                class="action-btn"
+              >
+                @if (isScanning) {
+                  <ion-spinner name="crescent" slot="start"></ion-spinner>
+                  Scanning Local Network...
+                } @else {
+                  <ion-icon name="search-outline" slot="start"></ion-icon>
+                  Scan for Active PCs
+                }
+              </ion-button>
+            </div>
+
+            @if (isScanning) {
+              <div class="radar-container">
+                <div class="radar-pulse"></div>
+                <ion-icon name="desktop-outline" class="radar-icon"></ion-icon>
+                <p class="radar-text">Broadcasting UDP discover to port 53537...</p>
+              </div>
+            }
+
+            @if (discoveredDevices.length > 0) {
+              <div class="device-results-list">
+                <span class="results-heading">Discovered PCs ({{ discoveredDevices.length }})</span>
+                @for (dev of discoveredDevices; track dev.ip) {
+                  <div class="discovered-card">
+                    <div class="discovered-main">
+                      <div class="discovered-icon-wrapper">
+                        <ion-icon name="desktop-outline" class="pc-icon"></ion-icon>
+                      </div>
+                      <div class="discovered-details">
+                        <span class="pc-title">{{ dev.device_name || dev.name || 'StreamDeck PC' }}</span>
+                        <span class="pc-ip">ws://{{ dev.ip }}:{{ dev.port || 53535 }}</span>
+                        @if (dev.udp_port || dev.media_port) {
+                          <span class="pc-ports">UDP: {{ dev.udp_port || 53537 }} | Media: {{ dev.media_port || 53536 }}</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="discovered-action">
+                      @if (dev.token_matched) {
+                        <ion-badge color="success" class="token-badge">Token Matched</ion-badge>
+                      }
+                      <ion-button
+                        size="small"
+                        color="secondary"
+                        (click)="selectDiscoveredDevice(dev)"
+                        style="font-weight: bold;"
+                      >
+                        <ion-icon name="flash-outline" slot="start"></ion-icon>
+                        Pair
+                      </ion-button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (hasScanned && !isScanning) {
+              <div class="empty-scan-state">
+                <p>No active PCs found on the local network.</p>
+                <span class="empty-subtext">Ensure Companion is open on your PC and both devices are connected to the same Wi-Fi.</span>
+              </div>
+            }
+
+            <!-- Modal / Inline Prompt when pairing a discovered PC without token -->
+            @if (selectedDeviceForPairing) {
+              <div class="token-prompt-card">
+                <div class="prompt-header">
+                  <span>Enter Token for {{ selectedDeviceForPairing.device_name || selectedDeviceForPairing.ip }}</span>
+                  <ion-button fill="clear" size="small" color="medium" (click)="selectedDeviceForPairing = null">
+                    <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+                  <ion-input
+                    [(ngModel)]="scanPairToken"
+                    placeholder="Enter Pairing Token from PC"
+                    type="text"
+                  ></ion-input>
+                </ion-item>
+                <ion-button expand="block" color="primary" (click)="confirmDiscoveredPairing()">
+                  Connect & Pair
+                </ion-button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Manual Input Fields -->
+        @if (mode === 'manual') {
+          <div>
+            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+              <ion-input
+                [(ngModel)]="ip"
+                placeholder="PC IP Address (e.g., 192.168.1.50)"
+                type="text"
+              ></ion-input>
+            </ion-item>
+
+            <div class="ports-row">
+              <ion-item fill="outline" mode="md" class="input-item flex-item ion-margin-bottom">
+                <ion-input
+                  [(ngModel)]="port"
+                  placeholder="WS Port (53535)"
+                  type="number"
+                ></ion-input>
+              </ion-item>
+              <ion-item fill="outline" mode="md" class="input-item flex-item ion-margin-bottom">
+                <ion-input
+                  [(ngModel)]="udpPort"
+                  placeholder="UDP Port (53537)"
+                  type="number"
+                ></ion-input>
+              </ion-item>
+            </div>
+
+            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+              <ion-input
+                [(ngModel)]="deviceName"
+                placeholder="PC Name (Optional, e.g. Desktop PC)"
+                type="text"
+              ></ion-input>
+            </ion-item>
+
+            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
+              <ion-input
+                [(ngModel)]="token"
+                placeholder="Pairing Token (secret)"
+                type="text"
+              ></ion-input>
+            </ion-item>
+
+            <ion-button expand="block" (click)="pairWithManual()" color="primary" class="action-btn">
+              Pair Manually
+            </ion-button>
+          </div>
+        }
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Quick Connect Mock / Demo Help -->
+    <ion-card color="dark" style="margin-top: 16px;">
+      <ion-card-header>
+        <ion-card-title style="font-size: 15px;">Localhost Demo Hook</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p style="color: #8a8a8a; font-size: 12.5px; margin-bottom: 12px;">
+          For testing in browser environments or local web servers.
+        </p>
+        <ion-button expand="block" fill="outline" color="secondary" (click)="pairWithLocalhost()">
+          Pair with Localhost (Port 53535)
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- QR Scanner Overlay -->
+  @if (scanning) {
+    <div class="scanner-overlay">
+      <div class="scanner-header">
+        <span class="scanner-title">Scan QR Code</span>
+        <ion-button fill="clear" color="light" (click)="stopScanning()" class="scanner-close-btn">
+          <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+      <div class="scanner-viewport">
+        <video #videoElement autoplay playsinline muted class="scanner-video"></video>
+        <canvas #canvasElement style="display: none;"></canvas>
+
+        <!-- Animated Laser overlay -->
+        <div class="scanner-box">
+          <div class="scanner-laser"></div>
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+        </div>
+      </div>
+      <div class="scanner-instructions">
+        Align the QR code from the desktop app within the square to scan.
+      </div>
+    </div>
+  }
+
+  <ion-toast
+    [isOpen]="showToast"
+    [message]="toastMsg"
+    [duration]="3000"
+    (didDismiss)="showToast = false"
+  ></ion-toast>
+</ion-content>

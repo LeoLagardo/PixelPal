@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
+import { DiscoveredDevice, PairedDevice } from '../models';
 import { FormsModule } from '@angular/forms';
+import { Capacitor } from '@capacitor/core';
 import {
   IonHeader,
   IonToolbar,
@@ -16,305 +18,29 @@ import {
   IonButton,
   IonTextarea,
   IonToast,
-  IonIcon
+  IonIcon,
+  IonSpinner,
+  IonBadge
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { qrCodeOutline, keypadOutline, serverOutline, closeOutline } from 'ionicons/icons';
+import {
+  qrCodeOutline,
+  serverOutline,
+  closeOutline,
+  radioOutline,
+  searchOutline,
+  refreshOutline,
+  checkmarkCircleOutline,
+  desktopOutline,
+  flashOutline
+} from 'ionicons/icons';
 import jsQR from 'jsqr';
 
 @Component({
   selector: 'app-pairing',
-  template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar color="dark">
-        <ion-title>Pair with PC</ion-title>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content class="ion-padding" style="--background: #121212;">
-      <div class="pairing-container">
-        <!-- Main instructions card -->
-        <ion-card color="dark">
-          <ion-card-header>
-            <ion-card-title>Pair Device</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <p style="margin-bottom: 16px; color: #a0a0a0;">
-              Pair your phone with the StreamDeck Companion desktop application. You can either paste the raw JSON string from your PC settings or enter the IP, Port, and Token manually.
-            </p>
-
-            <!-- Mode selector tabs/buttons -->
-            <div class="mode-selector">
-              <ion-button
-                fill="clear"
-                [color]="mode === 'json' ? 'primary' : 'medium'"
-                (click)="setMode('json')"
-                class="mode-btn"
-              >
-                <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-                JSON/QR String
-              </ion-button>
-              <ion-button
-                fill="clear"
-                [color]="mode === 'manual' ? 'primary' : 'medium'"
-                (click)="setMode('manual')"
-                class="mode-btn"
-              >
-                <ion-icon name="server-outline" slot="start"></ion-icon>
-                Manual Entry
-              </ion-button>
-            </div>
-
-            <!-- JSON String Input Area -->
-            @if (mode === 'json') {
-              <div>
-                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                  <ion-textarea
-                    [(ngModel)]="rawJson"
-                    placeholder='Paste the pairing JSON string here: {"token": "...", "port": 8080, "ip": "192.168.1.100"}'
-                    rows="4"
-                  ></ion-textarea>
-                </ion-item>
-
-                <!-- QR Scanning Button -->
-                <ion-button expand="block" color="secondary" (click)="startScanning()" class="ion-margin-bottom" style="--border-radius: 8px; font-weight: bold;">
-                  <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-                  Scan QR Code
-                </ion-button>
-
-                <ion-button expand="block" (click)="pairWithJson()" color="primary" class="action-btn">
-                  Pair using JSON
-                </ion-button>
-              </div>
-            }
-
-            <!-- Manual Input Fields -->
-            @if (mode === 'manual') {
-              <div>
-                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                  <ion-input
-                    [(ngModel)]="ip"
-                    placeholder="PC IP Address (e.g., 192.168.1.50)"
-                    type="text"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                  <ion-input
-                    [(ngModel)]="port"
-                    placeholder="Port (e.g., 8080)"
-                    type="number"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                  <ion-input
-                    [(ngModel)]="token"
-                    placeholder="Pairing Token (secret)"
-                    type="text"
-                  ></ion-input>
-                </ion-item>
-
-                <ion-button expand="block" (click)="pairWithManual()" color="primary" class="action-btn">
-                  Pair Manually
-                </ion-button>
-              </div>
-            }
-          </ion-card-content>
-        </ion-card>
-
-        <!-- Quick Connect Mock / Demo Help -->
-        <ion-card color="dark" style="margin-top: 16px;">
-          <ion-card-header>
-            <ion-card-title style="font-size: 16px;">Localhost Demo Hook</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <p style="color: #8a8a8a; font-size: 13px; margin-bottom: 12px;">
-              For testing in sandboxed browser environments or localhost web servers.
-            </p>
-            <ion-button expand="block" fill="outline" color="secondary" (click)="pairWithLocalhost()">
-              Pair with Localhost (Port 8080)
-            </ion-button>
-          </ion-card-content>
-        </ion-card>
-      </div>
-
-      <!-- QR Scanner Overlay -->
-      @if (scanning) {
-        <div class="scanner-overlay">
-          <div class="scanner-header">
-            <span class="scanner-title">Scan QR Code</span>
-            <ion-button fill="clear" color="light" (click)="stopScanning()" class="scanner-close-btn">
-              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
-            </ion-button>
-          </div>
-          <div class="scanner-viewport">
-            <video #videoElement autoplay playsinline muted class="scanner-video"></video>
-            <canvas #canvasElement style="display: none;"></canvas>
-
-            <!-- Animated Laser overlay -->
-            <div class="scanner-box">
-              <div class="scanner-laser"></div>
-              <div class="corner top-left"></div>
-              <div class="corner top-right"></div>
-              <div class="corner bottom-left"></div>
-              <div class="corner bottom-right"></div>
-            </div>
-          </div>
-          <div class="scanner-instructions">
-            Align the QR code from the desktop app within the square to scan.
-          </div>
-        </div>
-      }
-
-      <ion-toast
-        [isOpen]="showToast"
-        [message]="toastMsg"
-        [duration]="3000"
-        (didDismiss)="showToast = false"
-      ></ion-toast>
-    </ion-content>
-  `,
-  styles: [`
-    .pairing-container {
-      max-width: 500px;
-      margin: 0 auto;
-      padding-top: 20px;
-    }
-    .mode-selector {
-      display: flex;
-      justify-content: space-around;
-      background: #1e1e1e;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      padding: 4px;
-    }
-    .mode-btn {
-      --padding-start: 12px;
-      --padding-end: 12px;
-      font-weight: 600;
-      font-size: 13px;
-    }
-    .input-item {
-      --background: #1a1a1a;
-      --color: #ffffff;
-      --border-radius: 8px;
-    }
-    .action-btn {
-      margin-top: 10px;
-      --border-radius: 8px;
-      font-weight: bold;
-    }
-
-    /* Scanner Full Screen Overlay styles */
-    .scanner-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      color: #ffffff;
-    }
-    .scanner-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px;
-      background: rgba(0, 0, 0, 0.8);
-    }
-    .scanner-title {
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .scanner-close-btn {
-      --padding-end: 0;
-      --padding-start: 0;
-      margin: 0;
-    }
-    .scanner-viewport {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: #000;
-    }
-    .scanner-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
-    }
-    .scanner-box {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 12px;
-      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.6);
-      z-index: 10;
-      box-sizing: border-box;
-    }
-    .scanner-laser {
-      width: 100%;
-      height: 2px;
-      background-color: #3880ff;
-      position: absolute;
-      top: 0;
-      left: 0;
-      box-shadow: 0 0 8px 2px #3880ff;
-      animation: laser-scan 2.5s infinite linear;
-    }
-    @keyframes laser-scan {
-      0% { top: 0; }
-      50% { top: 100%; }
-      100% { top: 0; }
-    }
-    .corner {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      border-color: #3880ff;
-      border-style: solid;
-    }
-    .top-left {
-      top: -2px;
-      left: -2px;
-      border-width: 4px 0 0 4px;
-      border-top-left-radius: 10px;
-    }
-    .top-right {
-      top: -2px;
-      right: -2px;
-      border-width: 4px 4px 0 0;
-      border-top-right-radius: 10px;
-    }
-    .bottom-left {
-      bottom: -2px;
-      left: -2px;
-      border-width: 0 0 4px 4px;
-      border-bottom-left-radius: 10px;
-    }
-    .bottom-right {
-      bottom: -2px;
-      right: -2px;
-      border-width: 0 4px 4px 0;
-      border-bottom-right-radius: 10px;
-    }
-    .scanner-instructions {
-      padding: 24px;
-      text-align: center;
-      background: rgba(0, 0, 0, 0.8);
-      font-size: 14px;
-      color: #cccccc;
-    }
-  `],
+  templateUrl: 'pairing.page.html',
+  styleUrls: ['pairing.page.scss'],
+  standalone: true,
   imports: [
     FormsModule,
     IonHeader,
@@ -330,18 +56,29 @@ import jsQR from 'jsqr';
     IonButton,
     IonTextarea,
     IonToast,
-    IonIcon
+    IonIcon,
+    IonSpinner,
+    IonBadge
   ]
 })
 export class PairingPage implements OnInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
-  public mode: 'json' | 'manual' = 'json';
+  public mode: 'json' | 'scan' | 'manual' = 'json';
   public rawJson = '';
   public ip = '';
-  public port: number | null = null;
+  public port: number | null = 53535;
+  public udpPort: number | null = 53537;
+  public deviceName = '';
   public token = '';
+
+  // Network Scan states
+  public isScanning = false;
+  public hasScanned = false;
+  public discoveredDevices: DiscoveredDevice[] = [];
+  public selectedDeviceForPairing: DiscoveredDevice | null = null;
+  public scanPairToken = '';
 
   public showToast = false;
   public toastMsg = '';
@@ -352,20 +89,95 @@ export class PairingPage implements OnInit, OnDestroy {
   private animationFrameId: number | null = null;
 
   constructor(private companionService: CompanionService, private router: Router) {
-    addIcons({ qrCodeOutline, keypadOutline, serverOutline, closeOutline });
+    addIcons({
+      qrCodeOutline,
+      serverOutline,
+      closeOutline,
+      radioOutline,
+      searchOutline,
+      refreshOutline,
+      checkmarkCircleOutline,
+      desktopOutline,
+      flashOutline
+    });
   }
 
   ngOnInit() {
-    // If already paired, we can redirect or let the user decide.
-    // For this flow we just stay unless explicitly redirecting.
+    // On native devices, optionally default to scan mode; on web default to json
+    if (Capacitor.isNativePlatform()) {
+      this.mode = 'scan';
+      this.triggerNetworkScan();
+    } else {
+      this.mode = 'json';
+    }
   }
 
   ngOnDestroy() {
     this.stopScanning();
   }
 
-  public setMode(mode: 'json' | 'manual') {
+  public setMode(mode: 'json' | 'scan' | 'manual') {
     this.mode = mode;
+  }
+
+  public onJsonInput(event: any) {
+    if (event?.detail?.value !== undefined) {
+      this.rawJson = event.detail.value;
+    }
+  }
+
+  public async triggerNetworkScan() {
+    this.isScanning = true;
+    this.hasScanned = true;
+    this.selectedDeviceForPairing = null;
+
+    try {
+      this.discoveredDevices = await this.companionService.scanNetwork(2500, 53537);
+      if (this.discoveredDevices.length === 0 && Capacitor.isNativePlatform()) {
+        this.triggerToast('No active PCs found on Wi-Fi. Try QR / JSON or Manual Entry.');
+      }
+    } catch (e: any) {
+      this.triggerToast('Network scan error: ' + (e?.message || e));
+    } finally {
+      this.isScanning = false;
+    }
+  }
+
+  public selectDiscoveredDevice(dev: DiscoveredDevice) {
+    const existingToken = this.token.trim() || this.companionService.pairedDevice$.value?.token || '';
+    if (existingToken && dev.token_matched) {
+      this.executePairing({
+        ip: dev.ip,
+        port: dev.port || 53535,
+        token: existingToken,
+        name: dev.device_name || dev.name,
+        device_name: dev.device_name || dev.name,
+        media_port: dev.media_port || 53536,
+        udp_port: dev.udp_port || 53537
+      });
+    } else {
+      this.selectedDeviceForPairing = dev;
+      this.scanPairToken = existingToken;
+    }
+  }
+
+  public confirmDiscoveredPairing() {
+    if (!this.selectedDeviceForPairing) return;
+    if (!this.scanPairToken.trim()) {
+      this.triggerToast('Please enter the pairing token.');
+      return;
+    }
+
+    const dev = this.selectedDeviceForPairing;
+    this.executePairing({
+      ip: dev.ip,
+      port: dev.port || 53535,
+      token: this.scanPairToken.trim(),
+      name: dev.device_name || dev.name,
+      device_name: dev.device_name || dev.name,
+      media_port: dev.media_port || 53536,
+      udp_port: dev.udp_port || 53537
+    });
   }
 
   public async startScanning() {
@@ -375,11 +187,10 @@ export class PairingPage implements OnInit, OnDestroy {
         video: { facingMode: 'environment' }
       });
 
-      // Wait a moment for the component update to render videoElement
       setTimeout(() => {
         if (this.videoElement && this.mediaStream) {
           this.videoElement.nativeElement.srcObject = this.mediaStream;
-          this.videoElement.nativeElement.setAttribute('playsinline', 'true'); // required to tell iOS safari we don't want fullscreen
+          this.videoElement.nativeElement.setAttribute('playsinline', 'true');
           this.videoElement.nativeElement.play();
           this.animationFrameId = requestAnimationFrame(() => this.scanFrame());
         }
@@ -425,7 +236,7 @@ export class PairingPage implements OnInit, OnDestroy {
 
       if (code && code.data) {
         this.handleScannedCode(code.data);
-        return; // stop scanning after successful scan
+        return;
       }
     }
 
@@ -434,73 +245,117 @@ export class PairingPage implements OnInit, OnDestroy {
 
   private handleScannedCode(codeData: string) {
     this.stopScanning();
-    try {
-      const parsed = JSON.parse(codeData.trim());
-      const ip = parsed.ip || parsed.host || parsed.address;
-      const port = Number(parsed.port);
-      const token = parsed.token;
-
-      if (!ip || !port || !token) {
-        this.triggerToast('Scanned QR code invalid. Must include "ip", "port", and "token".');
-        return;
-      }
-
-      this.companionService.pair(ip, port, token, parsed.name || `PC at ${ip}`);
-      this.triggerToast('Successfully Paired with PC!');
-      setTimeout(() => {
-        this.router.navigateByUrl('/home', { replaceUrl: true });
-      }, 1000);
-    } catch (e) {
-      this.triggerToast('Failed to parse QR code. Invalid JSON format.');
-    }
+    this.parseAndPair(codeData);
   }
 
   public pairWithJson() {
-    if (!this.rawJson.trim()) {
+    if (!this.rawJson || !this.rawJson.trim()) {
       this.triggerToast('Please paste a raw JSON pairing string.');
+      return;
+    }
+    this.parseAndPair(this.rawJson);
+  }
+
+  private parseAndPair(inputStr: string) {
+    if (!inputStr) {
+      this.triggerToast('Pairing string is empty.');
       return;
     }
 
     try {
-      const parsed = JSON.parse(this.rawJson.trim());
-      const ip = parsed.ip || parsed.host || parsed.address;
-      const port = Number(parsed.port);
-      const token = parsed.token;
+      let cleanStr = inputStr.trim();
 
-      if (!ip || !port || !token) {
-        this.triggerToast('Invalid JSON. Must include "ip", "port", and "token".');
+      // 1. Remove markdown code fences ```json ... ``` or ``` ... ```
+      cleanStr = cleanStr.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+      // 2. Remove leading "json" if pasted without quotes
+      if (cleanStr.toLowerCase().startsWith('json')) {
+        cleanStr = cleanStr.substring(4).trim();
+      }
+
+      // 3. Extract JSON object substring between first '{' and last '}'
+      const firstBrace = cleanStr.indexOf('{');
+      const lastBrace = cleanStr.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        cleanStr = cleanStr.substring(firstBrace, lastBrace + 1);
+      }
+
+      const parsed = JSON.parse(cleanStr);
+
+      // Support all schema variations (ip, host, address, hostname, url)
+      let ip = parsed.ip || parsed.host || parsed.address || parsed.hostname;
+      if (!ip && parsed.url) {
+        try {
+          const u = new URL(parsed.url);
+          ip = u.hostname;
+        } catch (_) {}
+      }
+
+      const port = Number(parsed.port) || 53535;
+      const token = parsed.token || parsed.auth_token || parsed.secret || parsed.key;
+      const mediaPort = parsed.media_port ? Number(parsed.media_port) : 53536;
+      const udpPort = parsed.udp_port ? Number(parsed.udp_port) : 53537;
+      const deviceName = parsed.device_name || parsed.name || parsed.hostname || `PC at ${ip}`;
+
+      if (!ip || !token) {
+        this.triggerToast('Invalid pairing data. Must include "ip" and "token".');
         return;
       }
 
-      this.companionService.pair(ip, port, token, parsed.name || `PC at ${ip}`);
-      this.triggerToast('Successfully Paired with PC!');
-      setTimeout(() => {
-        this.router.navigateByUrl('/home', { replaceUrl: true });
-      }, 1000);
-    } catch (e) {
-      this.triggerToast('Failed to parse JSON. Please check formatting.');
+      this.executePairing({
+        ip: String(ip).trim(),
+        port,
+        token: String(token).trim(),
+        name: deviceName,
+        device_name: deviceName,
+        media_port: mediaPort,
+        udp_port: udpPort
+      });
+    } catch (e: any) {
+      console.error('[PairingPage] JSON parse error:', e, inputStr);
+      this.triggerToast('Failed to parse pairing JSON string. Please check formatting.');
     }
   }
 
   public pairWithManual() {
-    if (!this.ip.trim() || !this.port || !this.token.trim()) {
-      this.triggerToast('Please fill out IP, Port, and Pairing Token.');
+    if (!this.ip.trim() || !this.token.trim()) {
+      this.triggerToast('Please fill out IP address and Pairing Token.');
       return;
     }
 
-    this.companionService.pair(this.ip.trim(), this.port, this.token.trim());
-    this.triggerToast('Successfully Paired with PC!');
-    setTimeout(() => {
-      this.router.navigateByUrl('/home', { replaceUrl: true });
-    }, 1000);
+    const port = this.port || 53535;
+    const udpPort = this.udpPort || 53537;
+    const name = this.deviceName.trim() || `PC at ${this.ip.trim()}`;
+
+    this.executePairing({
+      ip: this.ip.trim(),
+      port,
+      token: this.token.trim(),
+      name,
+      device_name: name,
+      media_port: 53536,
+      udp_port: udpPort
+    });
   }
 
   public pairWithLocalhost() {
-    this.companionService.pair('localhost', 8080, 'demo-token', 'Local PC');
-    this.triggerToast('Successfully Paired with Localhost!');
+    this.executePairing({
+      ip: '127.0.0.1',
+      port: 53535,
+      token: 'demo-token',
+      name: 'Localhost PC',
+      device_name: 'Localhost PC',
+      media_port: 53536,
+      udp_port: 53537
+    });
+  }
+
+  private executePairing(device: PairedDevice) {
+    this.companionService.pairDevice(device);
+    this.triggerToast('Successfully Paired with ' + (device.name || device.ip) + '!');
     setTimeout(() => {
       this.router.navigateByUrl('/home', { replaceUrl: true });
-    }, 1000);
+    }, 800);
   }
 
   private triggerToast(msg: string) {

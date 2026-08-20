@@ -1,7 +1,9 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { App } from '@capacitor/app';
-import { PairedDevice, ScreenConfig } from '../models';
+import { Capacitor } from '@capacitor/core';
+import { PairedDevice, DiscoveredDevice, ScreenConfig } from '../models';
+import { UdpPlugin } from './udp.plugin';
 
 @Injectable({
   providedIn: 'root',
@@ -9,15 +11,18 @@ import { PairedDevice, ScreenConfig } from '../models';
 export class CompanionService {
   private ws: WebSocket | null = null;
   private reconnectTimeoutId: any = null;
+  private connectionTimerId: any = null;
+  private isDiscovering = false;
   private reconnectDelay = 2000;
   private maxReconnectDelay = 30000;
-  private isConnecting = false;
+  private connectionTimeoutMs = 2000;
 
   // State Subjects
   public pairedDevice$ = new BehaviorSubject<PairedDevice | null>(null);
   public connectionState$ = new BehaviorSubject<'connected' | 'disconnected' | 'connecting'>('disconnected');
   public screens$ = new BehaviorSubject<ScreenConfig[]>([]);
   public lastError$ = new BehaviorSubject<string | null>(null);
+  public isScanning$ = new BehaviorSubject<boolean>(false);
 
   constructor(private ngZone: NgZone) {
     this.loadState();
@@ -29,7 +34,7 @@ export class CompanionService {
     const deviceStr = localStorage.getItem('paired_device');
     if (deviceStr) {
       try {
-        const device = JSON.parse(deviceStr);
+        const device: PairedDevice = JSON.parse(deviceStr);
         this.pairedDevice$.next(device);
       } catch (e) {
         console.error('Error parsing paired device from localStorage', e);
@@ -53,19 +58,40 @@ export class CompanionService {
     App.addListener('appStateChange', (state) => {
       this.ngZone.run(() => {
         if (state.isActive) {
-          console.log('App came to foreground, reconnecting WebSocket if paired...');
+          console.log('[CompanionService] App came to foreground, reconnecting WebSocket...');
           this.reconnectDelay = 2000; // Reset backoff
           this.connect();
         } else {
-          console.log('App went to background, closing WebSocket...');
+          console.log('[CompanionService] App went to background, closing WebSocket...');
           this.disconnect(true); // temporary disconnect, don't clear reconnect state
         }
       });
     });
   }
 
-  public pair(ip: string, port: number, token: string, name?: string) {
-    const device: PairedDevice = { ip, port, token, name: name || `PC at ${ip}` };
+  public pair(
+    ip: string,
+    port: number = 53535,
+    token: string,
+    name?: string,
+    media_port: number = 53536,
+    udp_port: number = 53537,
+    device_name?: string
+  ) {
+    const deviceName = device_name || name || `PC at ${ip}`;
+    const device: PairedDevice = {
+      ip,
+      port: port || 53535,
+      token,
+      name: deviceName,
+      device_name: deviceName,
+      media_port: media_port || 53536,
+      udp_port: udp_port || 53537
+    };
+    this.pairDevice(device);
+  }
+
+  public pairDevice(device: PairedDevice) {
     localStorage.setItem('paired_device', JSON.stringify(device));
     this.pairedDevice$.next(device);
     this.reconnectDelay = 2000; // Reset backoff
@@ -92,26 +118,40 @@ export class CompanionService {
       return;
     }
 
-    this.isConnecting = true;
+    this.clearConnectionTimer();
     this.connectionState$.next('connecting');
     this.lastError$.next(null);
+    const wsUrl = `ws://${device.ip}:${device.port || 53535}`;
 
-    const wsUrl = `ws://${device.ip}:${device.port}`;
-    console.log(`Connecting to WebSocket: ${wsUrl}`);
+    console.log(`[CompanionService] Connecting to WebSocket: ${wsUrl}`);
+
+    let hasOpened = false;
+
+    // Timeout (5s) for slow networks before attempting background UDP discovery
+    this.connectionTimerId = setTimeout(() => {
+      this.ngZone.run(async () => {
+        if (!hasOpened && this.connectionState$.value === 'connecting') {
+          console.warn(`[CompanionService] WebSocket connection timed out (${this.connectionTimeoutMs}ms) to ${wsUrl}. Triggering UDP discovery...`);
+          this.cleanupCurrentSocket();
+          await this.handleConnectionFailure();
+        }
+      });
+    }, 5000);
 
     try {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.ngZone.run(() => {
-          console.log('WebSocket connection opened');
+          hasOpened = true;
+          this.clearConnectionTimer();
+          console.log('[CompanionService] WebSocket connection opened successfully to ' + wsUrl);
           this.connectionState$.next('connected');
           this.reconnectDelay = 2000; // Reset backoff on successful connection
-          this.isConnecting = false;
 
-          // On successful open:
           // 1. Authenticate with token
           this.send({ token: device.token });
+
           // 2. Request synchronization
           this.send({ type: 'sync', request: 'get_screens' });
         });
@@ -124,39 +164,47 @@ export class CompanionService {
       };
 
       this.ws.onclose = (event) => {
-        this.ngZone.run(() => {
-          console.log('WebSocket connection closed', event);
-          this.connectionState$.next('disconnected');
-          this.ws = null;
-          this.isConnecting = false;
-          this.scheduleReconnect();
+        this.ngZone.run(async () => {
+          this.clearConnectionTimer();
+          console.log('[CompanionService] WebSocket connection closed', event);
+          this.cleanupCurrentSocket();
+
+          if (!hasOpened) {
+            // Failed during handshake attempt
+            await this.handleConnectionFailure();
+          } else {
+            // Disconnected after having been active
+            this.connectionState$.next('connecting');
+            this.scheduleReconnect();
+          }
         });
       };
 
       this.ws.onerror = (error) => {
-        this.ngZone.run(() => {
-          console.error('WebSocket error:', error);
-          this.connectionState$.next('disconnected');
-          this.lastError$.next('Connection failed');
+        this.ngZone.run(async () => {
+          console.error('[CompanionService] WebSocket error:', error);
+          this.clearConnectionTimer();
+          this.lastError$.next('Connection to ' + wsUrl + ' failed');
+
+          if (!hasOpened) {
+            this.cleanupCurrentSocket();
+            await this.handleConnectionFailure();
+          }
         });
       };
     } catch (e: any) {
-      this.ngZone.run(() => {
-        console.error('WebSocket exception during connect:', e);
-        this.connectionState$.next('disconnected');
+      this.ngZone.run(async () => {
+        console.error('[CompanionService] WebSocket exception during connect:', e);
+        this.clearConnectionTimer();
+        this.cleanupCurrentSocket();
         this.lastError$.next(e.message || 'Connection error');
-        this.scheduleReconnect();
+        await this.handleConnectionFailure();
       });
     }
   }
 
-  public disconnect(keepState = false) {
-    if (this.reconnectTimeoutId) {
-      clearTimeout(this.reconnectTimeoutId);
-      this.reconnectTimeoutId = null;
-    }
+  private cleanupCurrentSocket() {
     if (this.ws) {
-      // Remove event listeners to prevent auto-reconnect trigger
       this.ws.onclose = null;
       this.ws.onerror = null;
       this.ws.onmessage = null;
@@ -164,10 +212,147 @@ export class CompanionService {
       try {
         this.ws.close();
       } catch (e) {
-        console.error('Error closing websocket', e);
+        // Ignore close exceptions
       }
       this.ws = null;
     }
+  }
+
+  private clearConnectionTimer() {
+    if (this.connectionTimerId) {
+      clearTimeout(this.connectionTimerId);
+      this.connectionTimerId = null;
+    }
+  }
+
+  /**
+   * Called on connection failure/timeout.
+   * Attempts UDP broadcast to find the PC (handles IP changes via DHCP),
+   * updates the saved IP address, and reconnects automatically.
+   */
+  private async handleConnectionFailure() {
+    if (this.isDiscovering) {
+      return;
+    }
+
+    const device = this.pairedDevice$.value;
+    if (!device) {
+      this.connectionState$.next('disconnected');
+      return;
+    }
+
+    // In web mode (testing in browser on same PC), try loopback 127.0.0.1 if LAN IP fails due to Windows firewall loopback restrictions
+    if (!Capacitor.isNativePlatform() && typeof window !== 'undefined') {
+      const isLocalhostOrigin = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhostOrigin && device.ip !== '127.0.0.1' && device.ip !== 'localhost') {
+        console.log('[CompanionService] Web browser on localhost detected. Retrying with 127.0.0.1 loopback...');
+        const loopbackDevice: PairedDevice = {
+          ...device,
+          ip: '127.0.0.1'
+        };
+        localStorage.setItem('paired_device', JSON.stringify(loopbackDevice));
+        this.pairedDevice$.next(loopbackDevice);
+        this.connect();
+        return;
+      }
+    }
+
+    // Keep connection state as connecting while we search and retry
+    this.connectionState$.next('connecting');
+    console.log('[CompanionService] Connection failed. Initiating UDP broadcast discovery for auto-reconnect...');
+    const discovered = await this.discoverAndReconnect(device.token);
+    if (!discovered) {
+      this.scheduleReconnect();
+    }
+  }
+
+  /**
+   * Broadcasts UDP packet to 255.255.255.255:53537 with the saved pairing token.
+   * On receiving pong response where token_matched === true:
+   * Updates saved IP and connects WebSocket to new address.
+   */
+  public async discoverAndReconnect(savedToken?: string): Promise<boolean> {
+    const currentDevice = this.pairedDevice$.value;
+    const token = savedToken || currentDevice?.token;
+    if (!token) {
+      return false;
+    }
+
+    if (this.isDiscovering) {
+      return false;
+    }
+
+    this.isDiscovering = true;
+    const targetUdpPort = currentDevice?.udp_port || 53537;
+
+    try {
+      console.log(`[CompanionService] Broadcasting UDP discover to 255.255.255.255:${targetUdpPort} with token...`);
+      const res = await UdpPlugin.discover({
+        token,
+        port: targetUdpPort,
+        timeout: 2000
+      });
+
+      console.log('[CompanionService] UDP discovery responses:', res.devices);
+      const matchedDevice = res.devices?.find(d => d.token_matched === true);
+
+      if (matchedDevice) {
+        console.log('[CompanionService] Matching PC discovered at:', matchedDevice.ip, matchedDevice);
+
+        const updatedDevice: PairedDevice = {
+          ip: matchedDevice.ip,
+          port: matchedDevice.port || currentDevice?.port || 53535,
+          token: token,
+          name: matchedDevice.device_name || matchedDevice.name || currentDevice?.name || `PC at ${matchedDevice.ip}`,
+          device_name: matchedDevice.device_name || matchedDevice.name || currentDevice?.device_name,
+          media_port: matchedDevice.media_port || currentDevice?.media_port || 53536,
+          udp_port: matchedDevice.udp_port || currentDevice?.udp_port || targetUdpPort
+        };
+
+        localStorage.setItem('paired_device', JSON.stringify(updatedDevice));
+        this.pairedDevice$.next(updatedDevice);
+
+        // Reset reconnect delay & connect WebSocket to the newly resolved IP
+        this.reconnectDelay = 2000;
+        this.connect();
+        return true;
+      }
+    } catch (e) {
+      console.warn('[CompanionService] UDP discovery error or unsupported:', e);
+    } finally {
+      this.isDiscovering = false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Scans local network for active StreamDeck Companion PCs via UDP broadcast.
+   */
+  public async scanNetwork(timeoutMs = 2500, port = 53537): Promise<DiscoveredDevice[]> {
+    this.isScanning$.next(true);
+    try {
+      console.log(`[CompanionService] Scanning local network on UDP port ${port}...`);
+      const result = await UdpPlugin.discover({
+        port,
+        timeout: timeoutMs
+      });
+      return result.devices || [];
+    } catch (e) {
+      console.error('[CompanionService] Network scan failed:', e);
+      return [];
+    } finally {
+      this.isScanning$.next(false);
+    }
+  }
+
+  public disconnect(keepState = false) {
+    this.clearConnectionTimer();
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+    this.cleanupCurrentSocket();
     if (!keepState) {
       this.connectionState$.next('disconnected');
     }
@@ -182,7 +367,7 @@ export class CompanionService {
       return; // Do not reconnect if unpaired
     }
 
-    console.log(`Scheduling reconnect in ${this.reconnectDelay}ms...`);
+    console.log(`[CompanionService] Scheduling reconnect in ${this.reconnectDelay}ms...`);
     this.reconnectTimeoutId = setTimeout(() => {
       this.ngZone.run(() => {
         this.connect();
@@ -195,13 +380,11 @@ export class CompanionService {
   private handleMessage(dataStr: string) {
     try {
       const data = JSON.parse(dataStr);
-      console.log('Received message:', data);
+      console.log('[CompanionService] Received message:', data);
 
       if (Array.isArray(data)) {
-        // Direct screens list payload (either as standard response or direct sync)
         this.updateScreens(data);
       } else if (data.type === 'sync' || data.type === 'screens') {
-        // If it's a direct message containing screens, or indicating update
         if (data.screens && Array.isArray(data.screens)) {
           this.updateScreens(data.screens);
         }
@@ -210,7 +393,7 @@ export class CompanionService {
         this.lastError$.next(errorReason);
       }
     } catch (e) {
-      console.error('Failed to parse WebSocket message', e, dataStr);
+      console.error('[CompanionService] Failed to parse WebSocket message', e, dataStr);
     }
   }
 
@@ -223,7 +406,7 @@ export class CompanionService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
     } else {
-      console.warn('Cannot send message, WebSocket is not open:', msg);
+      console.warn('[CompanionService] Cannot send message, WebSocket is not open:', msg);
     }
   }
 
@@ -231,3 +414,4 @@ export class CompanionService {
     this.send({ action, payload });
   }
 }
+
