@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ViewChildren, Quer
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
 import { OrientationService } from '../services/orientation.service';
-import { ScreenConfig, ButtonConfig, PairedDevice } from '../models';
+import { ScreenConfig, ButtonConfig, ButtonAction, PairedDevice } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DeckButtonComponent } from '../components/deck-button.component';
@@ -16,12 +16,24 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonAlert
+  IonAlert,
+  ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import {
+  settingsOutline,
+  refreshOutline,
+  unlinkOutline,
+  wifiOutline,
+  qrCodeOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
+  sparklesOutline
+} from 'ionicons/icons';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
+import { ProModalComponent } from '../components/pro-modal/pro-modal.component';
+import { EntitlementService } from '../services/entitlement.service';
 import { GridStylesPipe, GridButtonsPipe, GridThemePipe } from '../pipes';
 
 import { GRADIENT_THEMES } from '../constants/themes.constant';
@@ -83,18 +95,29 @@ export class HomePage implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   public isInactive = false;
+  public isPro = false;
   private readonly INACTIVITY_MS = 5000;
 
   constructor(
     public companionService: CompanionService,
+    private entitlementService: EntitlementService,
+    private modalCtrl: ModalController,
     private router: Router,
     private orientationService: OrientationService
   ) {
-    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline });
+    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline, sparklesOutline });
   }
 
   ngOnInit() {
     this.orientationService.lockLandscape();
+
+    this.isPro = this.entitlementService.isPro();
+
+    this.subs.add(
+      this.entitlementService.tier$.subscribe((tier) => {
+        this.isPro = tier === 'pro';
+      })
+    );
 
     this.subs.add(
       this.companionService.pairedDevice$.subscribe((device) => {
@@ -127,6 +150,16 @@ export class HomePage implements OnInit, OnDestroy {
     );
   }
 
+  public async openProModal() {
+    const modal = await this.modalCtrl.create({
+      component: ProModalComponent,
+      breakpoints: [0, 0.95],
+      initialBreakpoint: 0.95,
+      handle: true,
+    });
+    await modal.present();
+  }
+
   ionViewWillEnter() {
     this.orientationService.lockLandscape();
   }
@@ -136,7 +169,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.setupActivityListener();
+    // this.setupActivityListener();
   }
 
   ngOnDestroy() {
@@ -177,9 +210,12 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   // Button Action Handler
-  public onButtonTrigger(button: ButtonConfig) {
-    console.log('Button action triggered:', button);
-    this.companionService.sendAction(button.action.type, button.action.payload);
+  public onButtonTrigger(event: ButtonAction | ButtonConfig) {
+    const action: ButtonAction = 'action' in event && event.action ? event.action : (event as ButtonAction);
+    console.log('Button action triggered:', action);
+    if (action && action.type && action.payload !== undefined) {
+      this.companionService.sendAction(action.type, action.payload);
+    }
   }
 
   // Custom Carousel Touch/Scroll Tracking

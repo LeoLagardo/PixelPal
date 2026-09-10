@@ -1,4 +1,4 @@
-package com.pixelpal.app;
+package com.pixelpal.android;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(UdpPlugin.class);
+        registerPlugin(GooglePlayBillingPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.pixelpal.app',
+  appId: 'com.pixelpal.android',
   appName: 'PixelPal',
   webDir: 'www',
   server: {

@@ -340,7 +340,7 @@
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s, color 0.2s;
 
   &.is-dimmed {
-    opacity: 0;
+    opacity: 0.15;
     pointer-events: none;
   }
 }
@@ -440,6 +440,23 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.2px;
+}
+
+.bottom-icon-btn.pro-bar-btn {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  padding: 3px 10px;
+}
+
+.bottom-icon-btn.pro-bar-btn:hover {
+  background: rgba(168, 85, 247, 0.28);
+  color: #e9d5ff;
+}
+
+.pro-bar-text {
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
 }
 
 .bottom-icon-btn ion-icon {

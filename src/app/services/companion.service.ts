@@ -2,8 +2,15 @@ import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { PairedDevice, DiscoveredDevice, ScreenConfig } from '../models';
+import {
+  PairedDevice,
+  DiscoveredDevice,
+  ScreenConfig,
+  HandshakeAuthPayload,
+  HandshakeResponse,
+} from '../models';
 import { UdpPlugin } from './udp.plugin';
+import { EntitlementService, FREE_SCREEN_LIMIT } from './entitlement.service';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +23,7 @@ export class CompanionService {
   private reconnectDelay = 2000;
   private maxReconnectDelay = 30000;
   private connectionTimeoutMs = 2000;
+  private rawScreens: ScreenConfig[] = [];
 
   // State Subjects
   public pairedDevice$ = new BehaviorSubject<PairedDevice | null>(null);
@@ -23,10 +31,21 @@ export class CompanionService {
   public screens$ = new BehaviorSubject<ScreenConfig[]>([]);
   public lastError$ = new BehaviorSubject<string | null>(null);
   public isScanning$ = new BehaviorSubject<boolean>(false);
+  public activeSessionPlan$ = new BehaviorSubject<'free' | 'pro' | null>(null);
+  public negotiatedSchema$ = new BehaviorSubject<number>(1);
 
-  constructor(private ngZone: NgZone) {
+  constructor(private ngZone: NgZone, private entitlementService: EntitlementService) {
     this.loadState();
     this.initAppListeners();
+    this.initEntitlementListener();
+  }
+
+  private initEntitlementListener() {
+    this.entitlementService.tier$.subscribe(() => {
+      if (this.rawScreens.length > 0) {
+        this.applyScreenLimits();
+      }
+    });
   }
 
   private loadState() {
@@ -42,11 +61,11 @@ export class CompanionService {
     }
 
     // Load screens cache
-    const screensStr = localStorage.getItem('cached_screens');
-    if (screensStr) {
+    const rawStr = localStorage.getItem('raw_screens') || localStorage.getItem('cached_screens');
+    if (rawStr) {
       try {
-        const screens = JSON.parse(screensStr);
-        this.screens$.next(screens);
+        this.rawScreens = JSON.parse(rawStr);
+        this.applyScreenLimits();
       } catch (e) {
         console.error('Error parsing cached screens from localStorage', e);
       }
@@ -149,8 +168,15 @@ export class CompanionService {
           this.connectionState$.next('connected');
           this.reconnectDelay = 2000; // Reset backoff on successful connection
 
-          // 1. Authenticate with token
-          this.send({ token: device.token });
+          // 1. Authenticate with token, client metadata & entitlement
+          const authPayload: HandshakeAuthPayload = {
+            token: device.token,
+            device_name: device.device_name || device.name || 'PixelPal Mobile',
+            client_version: '1.0.0',
+            schema_version: 1,
+            entitlement: this.entitlementService.getEntitlementPayload(),
+          };
+          this.send(authPayload);
 
           // 2. Request synchronization
           this.send({ type: 'sync', request: 'get_screens' });
@@ -327,7 +353,7 @@ export class CompanionService {
   }
 
   /**
-   * Scans local network for active StreamDeck Companion PCs via UDP broadcast.
+   * Scans local network for active PixelPal PCs via UDP broadcast.
    */
   public async scanNetwork(timeoutMs = 2500, port = 53537): Promise<DiscoveredDevice[]> {
     this.isScanning$.next(true);
@@ -382,14 +408,23 @@ export class CompanionService {
       const data = JSON.parse(dataStr);
       console.log('[CompanionService] Received message:', data);
 
-      if (Array.isArray(data)) {
+      if (data.status === 'paired') {
+        if (data.active_plan) {
+          this.activeSessionPlan$.next(data.active_plan);
+          this.applyScreenLimits();
+        }
+        if (data.negotiated_schema) {
+          this.negotiatedSchema$.next(data.negotiated_schema);
+        }
+        this.lastError$.next(null);
+      } else if (Array.isArray(data)) {
         this.updateScreens(data);
       } else if (data.type === 'sync' || data.type === 'screens') {
         if (data.screens && Array.isArray(data.screens)) {
           this.updateScreens(data.screens);
         }
       } else if (data.status === 'error' || data.type === 'error') {
-        const errorReason = data.reason || data.message || 'An error occurred';
+        const errorReason = data.reason || data.message || data.error || 'An error occurred';
         this.lastError$.next(errorReason);
       }
     } catch (e) {
@@ -397,9 +432,18 @@ export class CompanionService {
     }
   }
 
+  private applyScreenLimits() {
+    const isPro = this.entitlementService.isPro() || this.activeSessionPlan$.value === 'pro';
+    const limit = isPro ? Infinity : FREE_SCREEN_LIMIT;
+    const effectiveScreens = this.rawScreens.slice(0, limit);
+    this.screens$.next(effectiveScreens);
+    localStorage.setItem('cached_screens', JSON.stringify(effectiveScreens));
+    localStorage.setItem('raw_screens', JSON.stringify(this.rawScreens));
+  }
+
   private updateScreens(screens: ScreenConfig[]) {
-    this.screens$.next(screens);
-    localStorage.setItem('cached_screens', JSON.stringify(screens));
+    this.rawScreens = Array.isArray(screens) ? screens : [];
+    this.applyScreenLimits();
   }
 
   public send(msg: any) {

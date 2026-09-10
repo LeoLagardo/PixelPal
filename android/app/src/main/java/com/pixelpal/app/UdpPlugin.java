@@ -1,4 +1,4 @@
-package com.pixelpal.app;
+package com.pixelpal.android;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
