@@ -112,17 +112,21 @@
                             />
                           }
                         } @else {
-                          @switch (screen.id) {
-                            @case ('app-companion-robot') {
+                          @switch (getMediaType(screen)) {
+                            @case ('companion') {
                               <app-companion-robot></app-companion-robot>
                             }
 
-                            @case ('app-heart-animation') {
-                              <app-pixel-heart></app-pixel-heart>
+                            @case ('standby-clock') {
+                              <app-standby-clock></app-standby-clock>
                             }
 
-                            @case ('tpl-media-clock') {
-                              <app-screensaver-clock></app-screensaver-clock>
+                            @case ('retro-clock') {
+                              <app-retro-clock></app-retro-clock>
+                            }
+
+                            @case ('heart') {
+                              <app-pixel-heart></app-pixel-heart>
                             }
                           }
                         }

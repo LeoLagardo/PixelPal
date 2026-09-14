@@ -230,9 +230,9 @@ import {
                 <span>Restore Purchase</span>
               </button>
 
-              <button type="button" class="dev-toggle-link" (click)="toggleDevTier()">
+              <!-- <button type="button" class="dev-toggle-link" (click)="toggleDevTier()">
                 <span>{{ isProTier ? 'Switch to Free (Test)' : 'Switch to Pro (Test)' }}</span>
-              </button>
+              </button> -->
             </div>
           </ion-card-content>
         </ion-card>

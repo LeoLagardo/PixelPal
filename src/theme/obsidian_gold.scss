@@ -1,0 +1,45 @@
+/* =====================================================
+   Theme: Obsidian Gold
+   Applied via: .theme-obsidian-gold on .grid-layout-container
+   ===================================================== */
+
+.theme-obsidian-gold {
+  /* Grid background */
+  background: linear-gradient(135deg, #0a0a0c 0%, #171510 50%, #262114 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(145deg, rgba(30, 26, 18, 0.85) 0%, rgba(14, 12, 8, 0.9) 100%);
+    border: 1.5px solid rgba(245, 197, 24, 0.45);
+    border-radius: 8px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(245, 197, 24, 0.15), inset 0 0 10px rgba(245, 197, 24, 0.08);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(145deg, rgba(60, 50, 30, 0.95) 0%, rgba(25, 22, 14, 0.95) 100%);
+    border-color: #fbbf24;
+    box-shadow: 0 0 22px rgba(245, 197, 24, 0.45), inset 0 0 14px rgba(245, 197, 24, 0.2);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #f5c518;
+    filter: drop-shadow(0 0 8px rgba(245, 197, 24, 0.65));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #fef08a;
+    text-shadow: 0 0 6px rgba(245, 197, 24, 0.35);
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(245, 197, 24, 0.25);
+  }
+}

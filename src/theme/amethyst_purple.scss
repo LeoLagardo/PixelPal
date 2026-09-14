@@ -1,0 +1,45 @@
+/* =====================================================
+   Theme: Royal Amethyst (Amethyst Purple)
+   Applied via: .theme-amethyst-purple on .grid-layout-container
+   ===================================================== */
+
+.theme-amethyst-purple {
+  /* Grid background */
+  background: linear-gradient(135deg, #120420 0%, #3b0764 50%, #6b21a8 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(145deg, rgba(40, 8, 70, 0.85) 0%, rgba(18, 3, 35, 0.9) 100%);
+    border: 1.5px solid rgba(168, 85, 247, 0.45);
+    border-radius: 10px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.22), inset 0 0 10px rgba(168, 85, 247, 0.1);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(145deg, rgba(80, 16, 140, 0.95) 0%, rgba(40, 8, 70, 0.95) 100%);
+    border-color: #c084fc;
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.6), inset 0 0 14px rgba(168, 85, 247, 0.25);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #c084fc;
+    filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.7));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #e9d5ff;
+    text-shadow: 0 0 6px rgba(168, 85, 247, 0.4);
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(168, 85, 247, 0.25);
+  }
+}

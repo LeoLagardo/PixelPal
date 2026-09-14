@@ -1,256 +1,394 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="dark">
-    <ion-title>Pair with PC</ion-title>
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar class="pairing-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="" icon="arrow-back-outline"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Connect to PC</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" color="medium" (click)="triggerToast('Ensure PixelPal is running on your desktop PC.')">
+        <ion-icon name="information-circle-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding" style="--background: #121212;">
+<ion-content class="pairing-content" [fullscreen]="true">
   <div class="pairing-container">
-    <!-- Main instructions card -->
-    <ion-card color="dark">
-      <ion-card-header>
-        <ion-card-title>Pair Device</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p style="margin-bottom: 16px; color: #a0a0a0; font-size: 13.5px; line-height: 1.4;">
-          Connect your device with the PixelPal desktop app. Paste the pairing JSON, scan a QR code, or use network auto-scan.
-        </p>
 
-        <!-- Mode selector tabs/buttons -->
-        <div class="mode-selector">
+    <!-- Hero Device Onboarding Header -->
+    <div class="hero-header">
+      <div class="hero-visual">
+        <div class="hero-icon-box pc-box">
+          <ion-icon name="desktop-outline"></ion-icon>
+        </div>
+        <div class="hero-connection-line">
+          <div class="connection-pulse"></div>
+          <ion-icon name="wifi-outline" class="connection-icon"></ion-icon>
+        </div>
+        <div class="hero-icon-box phone-box">
+          <ion-icon name="hardware-chip-outline"></ion-icon>
+        </div>
+      </div>
+      <h1 class="hero-title">Pair with PixelPal</h1>
+      <p class="hero-subtitle">
+        Turn your phone into a tactile, interactive companion deck for your PC.
+      </p>
+    </div>
+
+    <!-- Mode Selector Segment -->
+    <div class="segment-wrapper">
+      <ion-segment [value]="mode" (ionChange)="onSegmentChange($event)" mode="ios" class="custom-segment">
+        <ion-segment-button value="qr">
+          <ion-icon name="qr-code-outline"></ion-icon>
+          <ion-label>Scan QR</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="scan">
+          <ion-icon name="radio-outline"></ion-icon>
+          <ion-label>Auto-Detect</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="manual">
+          <ion-icon name="key-outline"></ion-icon>
+          <ion-label>Manual PIN</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- ==================== MODE 1: QR CODE & QUICK PAIR ==================== -->
+    @if (mode === 'qr') {
+      <div class="flow-card qr-flow-card">
+        <div class="qr-hero-card">
+          <div class="scanner-preview-box" (click)="startScanning()">
+            <div class="scanner-preview-corners">
+              <span class="corner-mark top-left"></span>
+              <span class="corner-mark top-right"></span>
+              <span class="corner-mark bottom-left"></span>
+              <span class="corner-mark bottom-right"></span>
+            </div>
+            <ion-icon name="scan-outline" class="scanner-hero-icon"></ion-icon>
+            <span class="scanner-tap-hint">Tap to Open Scanner</span>
+          </div>
+
           <ion-button
-            fill="clear"
-            [color]="mode === 'json' ? 'primary' : 'medium'"
-            (click)="setMode('json')"
-            class="mode-btn"
+            expand="block"
+            color="primary"
+            (click)="startScanning()"
+            class="action-btn primary-action"
           >
-            <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-            QR / JSON
+            <ion-icon name="scan-outline" slot="start"></ion-icon>
+            Scan PC QR Code
           </ion-button>
 
           <ion-button
-            fill="clear"
-            [color]="mode === 'scan' ? 'primary' : 'medium'"
-            (click)="setMode('scan')"
-            class="mode-btn"
+            expand="block"
+            fill="outline"
+            color="light"
+            (click)="pasteFromClipboard()"
+            class="action-btn secondary-action"
           >
-            <ion-icon name="radio-outline" slot="start"></ion-icon>
-            Auto Scan
-          </ion-button>
-
-          <ion-button
-            fill="clear"
-            [color]="mode === 'manual' ? 'primary' : 'medium'"
-            (click)="setMode('manual')"
-            class="mode-btn"
-          >
-            <ion-icon name="server-outline" slot="start"></ion-icon>
-            Manual
+            <ion-icon name="clipboard-outline" slot="start"></ion-icon>
+            Paste from Clipboard
           </ion-button>
         </div>
 
-        <!-- JSON String Input Area -->
-        @if (mode === 'json') {
-          <div>
-            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-              <ion-textarea
-                [(ngModel)]="rawJson"
-                (ionInput)="onJsonInput($event)"
-                placeholder='Paste pairing JSON: {"token": "...", "ip": "192.168.1.50", "port": 53535, "udp_port": 53537, "device_name": "My PC"}'
-                [rows]="5"
-                [autoGrow]="true"
-              ></ion-textarea>
-            </ion-item>
+        <!-- Guided Steps -->
+        <div class="guide-card">
+          <h3 class="guide-title">
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+            Quick 3-Step Setup
+          </h3>
+          <ol class="guide-steps">
+            <li>
+              <span class="step-num">1</span>
+              <span class="step-text">Open <strong>PixelPal</strong> on your PC</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span class="step-text">Go to <strong>Settings</strong> &rarr; <strong>Pair a Device</strong></span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span class="step-text">Aim camera at the displayed QR code</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+    }
 
-            <!-- QR Scanning Button -->
-            <ion-button expand="block" color="secondary" (click)="startScanning()" class="ion-margin-bottom action-btn">
-              <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-              Scan QR Code via Camera
-            </ion-button>
+    <!-- ==================== MODE 2: AUTO-DISCOVERY ON WI-FI ==================== -->
+    @if (mode === 'scan') {
+      <div class="flow-card scan-flow-card">
+        <div class="scan-header-action">
+          <ion-button
+            expand="block"
+            color="primary"
+            [disabled]="isScanning"
+            (click)="triggerNetworkScan()"
+            class="action-btn primary-action"
+          >
+            @if (isScanning) {
+              <ion-spinner name="crescent" slot="start"></ion-spinner>
+              Searching Local Network...
+            } @else {
+              <ion-icon name="search-outline" slot="start"></ion-icon>
+              Search for Active PCs
+            }
+          </ion-button>
+        </div>
 
-            <ion-button expand="block" (click)="pairWithJson()" color="primary" class="action-btn">
-              Pair using JSON
-            </ion-button>
+        @if (isScanning) {
+          <div class="radar-container">
+            <div class="radar-ripple ring-1"></div>
+            <div class="radar-ripple ring-2"></div>
+            <div class="radar-ripple ring-3"></div>
+            <div class="radar-center-circle">
+              <ion-icon name="desktop-outline" class="radar-center-icon"></ion-icon>
+            </div>
+            <p class="radar-status-text">Scanning your local Wi-Fi for PixelPal...</p>
           </div>
         }
 
-        <!-- Network Scan Mode -->
-        @if (mode === 'scan') {
-          <div class="scan-section">
-            <div class="scan-action-box">
-              <ion-button
-                expand="block"
-                color="primary"
-                [disabled]="isScanning"
-                (click)="triggerNetworkScan()"
-                class="action-btn"
-              >
-                @if (isScanning) {
-                  <ion-spinner name="crescent" slot="start"></ion-spinner>
-                  Scanning Local Network...
-                } @else {
-                  <ion-icon name="search-outline" slot="start"></ion-icon>
-                  Scan for Active PCs
-                }
-              </ion-button>
+        <!-- Discovered PCs List -->
+        @if (discoveredDevices.length > 0) {
+          <div class="discovered-section">
+            <div class="section-label-row">
+              <span class="section-badge">FOUND ON WI-FI</span>
+              <span class="section-count">{{ discoveredDevices.length }} {{ discoveredDevices.length === 1 ? 'Device' : 'Devices' }}</span>
             </div>
 
-            @if (isScanning) {
-              <div class="radar-container">
-                <div class="radar-pulse"></div>
-                <ion-icon name="desktop-outline" class="radar-icon"></ion-icon>
-                <p class="radar-text">Broadcasting UDP discover to port 53537...</p>
-              </div>
-            }
-
-            @if (discoveredDevices.length > 0) {
-              <div class="device-results-list">
-                <span class="results-heading">Discovered PCs ({{ discoveredDevices.length }})</span>
-                @for (dev of discoveredDevices; track dev.ip) {
-                  <div class="discovered-card">
-                    <div class="discovered-main">
-                      <div class="discovered-icon-wrapper">
-                        <ion-icon name="desktop-outline" class="pc-icon"></ion-icon>
-                      </div>
-                      <div class="discovered-details">
-                        <span class="pc-title">{{ dev.device_name || dev.name || 'StreamDeck PC' }}</span>
-                        <span class="pc-ip">ws://{{ dev.ip }}:{{ dev.port || 53535 }}</span>
-                        @if (dev.udp_port || dev.media_port) {
-                          <span class="pc-ports">UDP: {{ dev.udp_port || 53537 }} | Media: {{ dev.media_port || 53536 }}</span>
+            <div class="device-cards-list">
+              @for (dev of discoveredDevices; track dev.ip) {
+                <div class="device-card" [class.is-selected]="selectedDeviceForPairing?.ip === dev.ip">
+                  <div class="device-info-row">
+                    <div class="device-avatar">
+                      <ion-icon name="desktop-outline"></ion-icon>
+                      <span class="online-indicator"></span>
+                    </div>
+                    <div class="device-text">
+                      <span class="device-name">{{ dev.device_name || dev.name || 'Desktop PC' }}</span>
+                      <div class="device-meta">
+                        <span class="ip-chip">{{ dev.ip }}</span>
+                        @if (dev.token_matched) {
+                          <ion-badge color="success" class="trusted-badge">
+                            <ion-icon name="checkmark-circle-outline"></ion-icon>
+                            Verified
+                          </ion-badge>
                         }
                       </div>
                     </div>
-
-                    <div class="discovered-action">
-                      @if (dev.token_matched) {
-                        <ion-badge color="success" class="token-badge">Token Matched</ion-badge>
-                      }
-                      <ion-button
-                        size="small"
-                        color="secondary"
-                        (click)="selectDiscoveredDevice(dev)"
-                        style="font-weight: bold;"
-                      >
-                        <ion-icon name="flash-outline" slot="start"></ion-icon>
-                        Pair
-                      </ion-button>
-                    </div>
+                    <ion-button
+                      size="small"
+                      color="secondary"
+                      class="pair-device-btn"
+                      (click)="selectDiscoveredDevice(dev)"
+                    >
+                      <ion-icon name="flash-outline" slot="start"></ion-icon>
+                      Connect
+                    </ion-button>
                   </div>
-                }
-              </div>
-            } @else if (hasScanned && !isScanning) {
-              <div class="empty-scan-state">
-                <p>No active PCs found on the local network.</p>
-                <span class="empty-subtext">Ensure Companion is open on your PC and both devices are connected to the same Wi-Fi.</span>
-              </div>
-            }
 
-            <!-- Modal / Inline Prompt when pairing a discovered PC without token -->
-            @if (selectedDeviceForPairing) {
-              <div class="token-prompt-card">
-                <div class="prompt-header">
-                  <span>Enter Token for {{ selectedDeviceForPairing.device_name || selectedDeviceForPairing.ip }}</span>
-                  <ion-button fill="clear" size="small" color="medium" (click)="selectedDeviceForPairing = null">
-                    <ion-icon name="close-outline" slot="icon-only"></ion-icon>
-                  </ion-button>
+                  <!-- Inline PIN Prompt if selected device needs verification -->
+                  @if (selectedDeviceForPairing?.ip === dev.ip) {
+                    <div class="inline-token-prompt">
+                      <div class="prompt-header">
+                        <span class="prompt-title">Enter 4-Digit PC PIN</span>
+                        <ion-button fill="clear" size="small" color="medium" (click)="selectedDeviceForPairing = null">
+                          <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                      </div>
+                      <p class="prompt-desc">Check the pairing screen on your computer for the code.</p>
+                      <div class="pin-input-group">
+                        <ion-input
+                          [(ngModel)]="scanPairToken"
+                          placeholder="e.g. 1234"
+                          type="text"
+                          maxlength="16"
+                          class="modern-input pin-input"
+                        ></ion-input>
+                        <ion-button color="primary" class="pin-submit-btn" (click)="confirmDiscoveredPairing()">
+                          Pair
+                        </ion-button>
+                      </div>
+                    </div>
+                  }
                 </div>
-                <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-                  <ion-input
-                    [(ngModel)]="scanPairToken"
-                    placeholder="Enter Pairing Token from PC"
-                    type="text"
-                  ></ion-input>
-                </ion-item>
-                <ion-button expand="block" color="primary" (click)="confirmDiscoveredPairing()">
-                  Connect & Pair
-                </ion-button>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Manual Input Fields -->
-        @if (mode === 'manual') {
-          <div>
-            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-              <ion-input
-                [(ngModel)]="ip"
-                placeholder="PC IP Address (e.g., 192.168.1.50)"
-                type="text"
-              ></ion-input>
-            </ion-item>
-
-            <div class="ports-row">
-              <ion-item fill="outline" mode="md" class="input-item flex-item ion-margin-bottom">
-                <ion-input
-                  [(ngModel)]="port"
-                  placeholder="WS Port (53535)"
-                  type="number"
-                ></ion-input>
-              </ion-item>
-              <ion-item fill="outline" mode="md" class="input-item flex-item ion-margin-bottom">
-                <ion-input
-                  [(ngModel)]="udpPort"
-                  placeholder="UDP Port (53537)"
-                  type="number"
-                ></ion-input>
-              </ion-item>
+              }
             </div>
-
-            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-              <ion-input
-                [(ngModel)]="deviceName"
-                placeholder="PC Name (Optional, e.g. Desktop PC)"
-                type="text"
-              ></ion-input>
-            </ion-item>
-
-            <ion-item fill="outline" mode="md" class="input-item ion-margin-bottom">
-              <ion-input
-                [(ngModel)]="token"
-                placeholder="Pairing Token (secret)"
-                type="text"
-              ></ion-input>
-            </ion-item>
-
-            <ion-button expand="block" (click)="pairWithManual()" color="primary" class="action-btn">
-              Pair Manually
-            </ion-button>
+          </div>
+        } @else if (hasScanned && !isScanning) {
+          <div class="empty-state-card">
+            <div class="empty-icon-circle">
+              <ion-icon name="wifi-outline"></ion-icon>
+            </div>
+            <h4 class="empty-title">No PCs Found on Wi-Fi</h4>
+            <p class="empty-subtitle">
+              Make sure PixelPal Desktop is open and both devices are connected to the same Wi-Fi network.
+            </p>
+            <div class="empty-actions">
+              <ion-button size="small" fill="outline" color="primary" (click)="setMode('qr')">
+                <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+                Try QR Code Instead
+              </ion-button>
+              <ion-button size="small" fill="clear" color="medium" (click)="setMode('manual')">
+                Enter IP Manually
+              </ion-button>
+            </div>
           </div>
         }
-      </ion-card-content>
-    </ion-card>
+      </div>
+    }
 
-    <!-- Quick Connect Mock / Demo Help -->
-    <ion-card color="dark" style="margin-top: 16px;">
-      <ion-card-header>
-        <ion-card-title style="font-size: 15px;">Localhost Demo Hook</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p style="color: #8a8a8a; font-size: 12.5px; margin-bottom: 12px;">
-          For testing in browser environments or local web servers.
-        </p>
-        <ion-button expand="block" fill="outline" color="secondary" (click)="pairWithLocalhost()">
-          Pair with Localhost (Port 53535)
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
+    <!-- ==================== MODE 3: MANUAL PIN & DIRECT IP ==================== -->
+    @if (mode === 'manual') {
+      <div class="flow-card manual-flow-card">
+        <div class="form-section">
+          <label class="form-label">PC IP Address</label>
+          <div class="input-container">
+            <ion-icon name="wifi-outline" class="input-icon"></ion-icon>
+            <ion-input
+              [(ngModel)]="ip"
+              placeholder="192.168.1.50"
+              type="text"
+              class="modern-input"
+            ></ion-input>
+          </div>
+          <span class="field-hint">Found in PixelPal Desktop &rarr; Settings &rarr; Pair Device</span>
+
+          <label class="form-label ion-margin-top">Pairing PIN / Code</label>
+          <div class="input-container">
+            <ion-icon name="key-outline" class="input-icon"></ion-icon>
+            <ion-input
+              [(ngModel)]="token"
+              placeholder="4-digit PIN (e.g. 1234)"
+              type="text"
+              class="modern-input"
+            ></ion-input>
+          </div>
+
+          <label class="form-label ion-margin-top">PC Name <span class="optional-tag">(Optional)</span></label>
+          <div class="input-container">
+            <ion-icon name="desktop-outline" class="input-icon"></ion-icon>
+            <ion-input
+              [(ngModel)]="deviceName"
+              placeholder="e.g. Workstation PC"
+              type="text"
+              class="modern-input"
+            ></ion-input>
+          </div>
+
+          <!-- Collapsible Advanced Port Settings -->
+          <ion-accordion-group class="advanced-accordion">
+            <ion-accordion value="ports">
+              <ion-item slot="header" color="dark" class="accordion-header-item">
+                <ion-icon name="hardware-chip-outline" slot="start" color="medium"></ion-icon>
+                <ion-label color="medium" style="font-size: 13px;">Advanced Network Ports</ion-label>
+              </ion-item>
+              <div slot="content" class="ports-grid ion-padding-top">
+                <div class="port-col">
+                  <label class="form-label">WebSocket Port</label>
+                  <ion-input
+                    [(ngModel)]="port"
+                    type="number"
+                    placeholder="53535"
+                    class="modern-input"
+                  ></ion-input>
+                </div>
+                <div class="port-col">
+                  <label class="form-label">UDP Discovery Port</label>
+                  <ion-input
+                    [(ngModel)]="udpPort"
+                    type="number"
+                    placeholder="53537"
+                    class="modern-input"
+                  ></ion-input>
+                </div>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+
+          <ion-button
+            expand="block"
+            color="primary"
+            class="action-btn primary-action connect-btn"
+            (click)="pairWithManual()"
+          >
+            <ion-icon name="flash-outline" slot="start"></ion-icon>
+            Connect to PC
+          </ion-button>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== DEVELOPER & ADVANCED TOOLS ACCORDION ==================== -->
+    <!-- <div class="dev-tools-wrapper">
+      <ion-accordion-group class="dev-accordion">
+        <ion-accordion value="dev-tools">
+          <ion-item slot="header" class="dev-header-item">
+            <ion-icon name="code-slash-outline" slot="start" color="medium"></ion-icon>
+            <ion-label color="medium">Developer & Test Tools</ion-label>
+          </ion-item>
+          <div slot="content" class="dev-content-box">
+            <p class="dev-desc">Tools for local web simulator and browser test harnesses.</p>
+            
+            <ion-button
+              expand="block"
+              fill="outline"
+              color="secondary"
+              size="small"
+              class="dev-btn"
+              (click)="pairWithLocalhost()"
+            >
+              <ion-icon name="laptop-outline" slot="start"></ion-icon>
+              Pair with Localhost (Port 53535)
+            </ion-button>
+
+            <div class="dev-json-box ion-margin-top">
+              <label class="form-label">Raw JSON String Import</label>
+              <ion-textarea
+                [(ngModel)]="rawJson"
+                (ionInput)="onJsonInput($event)"
+                placeholder='Paste raw JSON payload: {"token": "...", "ip": "127.0.0.1", ...}'
+                [rows]="3"
+                [autoGrow]="true"
+                class="modern-textarea"
+              ></ion-textarea>
+              <ion-button
+                expand="block"
+                size="small"
+                color="medium"
+                fill="outline"
+                class="ion-margin-top"
+                (click)="pairWithJson()"
+              >
+                Import & Pair JSON
+              </ion-button>
+            </div>
+          </div>
+        </ion-accordion>
+      </ion-accordion-group>
+    </div> -->
+
   </div>
 
-  <!-- QR Scanner Overlay -->
+  <!-- ==================== FULL-SCREEN CAMERA SCANNER HUD ==================== -->
   @if (scanning) {
     <div class="scanner-overlay">
       <div class="scanner-header">
-        <span class="scanner-title">Scan QR Code</span>
+        <div class="scanner-header-info">
+          <span class="scanner-title">Scan QR Code</span>
+          <span class="scanner-sub">Align PC QR code inside the box</span>
+        </div>
         <ion-button fill="clear" color="light" (click)="stopScanning()" class="scanner-close-btn">
           <ion-icon name="close-outline" slot="icon-only"></ion-icon>
         </ion-button>
       </div>
+
       <div class="scanner-viewport">
         <video #videoElement autoplay playsinline muted class="scanner-video"></video>
         <canvas #canvasElement style="display: none;"></canvas>
 
-        <!-- Animated Laser overlay -->
+        <!-- Laser Viewfinder Box -->
         <div class="scanner-box">
           <div class="scanner-laser"></div>
           <div class="corner top-left"></div>
@@ -259,12 +397,16 @@
           <div class="corner bottom-right"></div>
         </div>
       </div>
-      <div class="scanner-instructions">
-        Align the QR code from the desktop app within the square to scan.
+
+      <div class="scanner-footer">
+        <ion-button fill="outline" color="light" size="small" (click)="stopScanning()">
+          Cancel Scanning
+        </ion-button>
       </div>
     </div>
   }
 
+  <!-- Feedback Toast -->
   <ion-toast
     [isOpen]="showToast"
     [message]="toastMsg"

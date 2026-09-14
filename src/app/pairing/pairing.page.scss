@@ -1,51 +1,354 @@
-.pairing-container {
-  max-width: 520px;
-  margin: 0 auto;
-  padding-top: 10px;
+/* Modern Production Styling for PixelPal Pairing Screen */
+
+:host {
+  --pairing-bg: #0b0d11;
+  --card-bg: rgba(22, 25, 34, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-purple: #8b5cf6;
 }
 
-.mode-selector {
-  display: flex;
-  justify-content: space-around;
-  background: #1e1e1e;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  padding: 4px;
-  gap: 4px;
-}
-
-.mode-btn {
-  flex: 1;
-  --padding-start: 6px;
-  --padding-end: 6px;
-  font-weight: 600;
-  font-size: 12.5px;
-}
-
-.input-item {
-  --background: #1a1a1a;
+.pairing-toolbar {
+  --background: rgba(11, 13, 17, 0.9);
+  --border-color: rgba(255, 255, 255, 0.06);
   --color: #ffffff;
-  --border-radius: 8px;
+  backdrop-filter: blur(12px);
+
+  ion-title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
 }
 
-.ports-row {
+.pairing-content {
+  --background: radial-gradient(circle at 50% 0%, #171d2b 0%, #0b0d11 65%);
+  --color: #ffffff;
+}
+
+.pairing-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.flex-item {
-  flex: 1;
+/* ==================== HERO ONBOARDING HEADER ==================== */
+.hero-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 12px 14px;
 }
 
+.hero-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.hero-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--accent-cyan);
+  }
+}
+
+.phone-box {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15));
+  border-color: rgba(139, 92, 246, 0.3);
+
+  ion-icon {
+    color: #a855f7;
+  }
+}
+
+.hero-connection-line {
+  position: relative;
+  width: 54px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-pulse {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+  animation: pulse-travel 2.2s infinite ease-in-out;
+}
+
+@keyframes pulse-travel {
+  0% { left: 0%; opacity: 0.2; transform: scale(0.7); }
+  50% { left: 50%; opacity: 1; transform: scale(1.1); }
+  100% { left: 100%; opacity: 0.2; transform: scale(0.7); }
+}
+
+.connection-icon {
+  position: absolute;
+  top: -18px;
+  font-size: 14px;
+  color: var(--accent-cyan);
+  opacity: 0.8;
+}
+
+.hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* ==================== SEGMENT PILL CONTROLLER ==================== */
+.segment-wrapper {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 4px;
+  backdrop-filter: blur(10px);
+}
+
+.custom-segment {
+  --background: transparent;
+
+  ion-segment-button {
+    --indicator-color: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --color: #94a3b8;
+    --color-checked: #ffffff;
+    --border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    min-height: 38px;
+    letter-spacing: 0.1px;
+    text-transform: none;
+
+    ion-icon {
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+  }
+}
+
+/* ==================== FLOW CARDS (BASE) ==================== */
+.flow-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Action Buttons */
 .action-btn {
-  margin-top: 10px;
-  --border-radius: 8px;
-  font-weight: bold;
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  --border-radius: 12px;
+  min-height: 46px;
 }
 
-/* Radar / Network Scan Section */
-.scan-action-box {
-  margin-bottom: 16px;
+.primary-action {
+  --background: linear-gradient(135deg, #3b82f6, #2563eb);
+  --box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.secondary-action {
+  margin-top: 10px;
+  --border-color: rgba(255, 255, 255, 0.15);
+  --border-width: 1px;
+  --color: #e2e8f0;
+}
+
+/* ==================== MODE 1: QR CODE STYLING ==================== */
+.qr-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.scanner-preview-box {
+  width: 150px;
+  height: 150px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+.scanner-preview-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.corner-mark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: var(--accent-cyan);
+  border-style: solid;
+}
+
+.corner-mark.top-left {
+  top: 6px;
+  left: 6px;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 6px;
+}
+
+.corner-mark.top-right {
+  top: 6px;
+  right: 6px;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 6px;
+}
+
+.corner-mark.bottom-left {
+  bottom: 6px;
+  left: 6px;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 6px;
+}
+
+.corner-mark.bottom-right {
+  bottom: 6px;
+  right: 6px;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 6px;
+}
+
+.scanner-hero-icon {
+  font-size: 52px;
+  color: var(--accent-cyan);
+  filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.4));
+  margin-bottom: 6px;
+}
+
+.scanner-tap-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+}
+
+/* Setup Guide Card */
+.guide-card {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.guide-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  letter-spacing: 0.2px;
+
+  ion-icon {
+    font-size: 16px;
+    color: #10b981;
+  }
+}
+
+.guide-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    color: #94a3b8;
+
+    strong {
+      color: #f1f5f9;
+    }
+  }
+}
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ==================== MODE 2: AUTO-DETECT / RADAR STYLING ==================== */
+.scan-header-action {
+  margin-bottom: 12px;
 }
 
 .radar-container {
@@ -53,191 +356,491 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 28px 0 18px;
   position: relative;
+  overflow: hidden;
 }
 
-.radar-pulse {
-  width: 60px;
-  height: 60px;
+.radar-center-circle {
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: rgba(56, 128, 255, 0.25);
-  position: absolute;
-  animation: pulse-ring 1.8s infinite ease-out;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(6, 182, 212, 0.3));
+  border: 1px solid rgba(6, 182, 212, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
 }
 
-@keyframes pulse-ring {
+.radar-center-icon {
+  font-size: 28px;
+  color: #38bdf8;
+}
+
+.radar-ripple {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  animation: ripple-expand 2.4s infinite cubic-bezier(0.1, 0.2, 0.3, 1);
+}
+
+.ring-1 {
+  width: 80px;
+  height: 80px;
+  animation-delay: 0s;
+}
+
+.ring-2 {
+  width: 140px;
+  height: 140px;
+  animation-delay: 0.8s;
+}
+
+.ring-3 {
+  width: 200px;
+  height: 200px;
+  animation-delay: 1.6s;
+}
+
+@keyframes ripple-expand {
   0% {
-    transform: scale(0.6);
-    opacity: 1;
+    transform: scale(0.4);
+    opacity: 0.9;
   }
   100% {
-    transform: scale(2.2);
+    transform: scale(1.6);
     opacity: 0;
   }
 }
 
-.radar-icon {
-  font-size: 32px;
-  color: #3880ff;
+.radar-status-text {
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
   position: relative;
   z-index: 2;
 }
 
-.radar-text {
-  color: #a0a0a0;
-  font-size: 12.5px;
-  margin-top: 16px;
-  text-align: center;
+/* Discovered Devices */
+.discovered-section {
+  margin-top: 8px;
 }
 
-.device-results-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.results-heading {
-  font-size: 13px;
-  font-weight: 600;
-  color: #3880ff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-
-.discovered-card {
+.section-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1e1e1e;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
 }
 
-.discovered-main {
+.section-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: var(--accent-cyan);
+}
+
+.section-count {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.device-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.device-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+
+  &.is-selected {
+    border-color: var(--accent-blue);
+    background: rgba(37, 99, 235, 0.08);
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.2);
+  }
+}
+
+.device-info-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.discovered-icon-wrapper {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background: rgba(56, 128, 255, 0.15);
+.device-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 22px;
+    color: #60a5fa;
+  }
 }
 
-.pc-icon {
-  font-size: 20px;
-  color: #3880ff;
+.online-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #161922;
+  box-shadow: 0 0 6px #10b981;
 }
 
-.discovered-details {
+.device-text {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 
-.pc-title {
-  font-weight: bold;
+.device-name {
+  font-size: 14.5px;
+  font-weight: 700;
   color: #ffffff;
-  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.pc-ip {
-  color: #a0a0a0;
-  font-size: 12px;
-  margin-top: 2px;
-  font-family: monospace;
-}
-
-.pc-ports {
-  color: #666666;
-  font-size: 10.5px;
-  margin-top: 2px;
-}
-
-.discovered-action {
+.device-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 6px;
 }
 
-.token-badge {
+.ip-chip {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.trusted-badge {
   font-size: 10px;
-  padding: 3px 6px;
+  font-weight: 700;
+  padding: 2px 6px;
+  --background: rgba(16, 185, 129, 0.15);
+  --color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  ion-icon {
+    font-size: 11px;
+  }
 }
 
-.empty-scan-state {
-  text-align: center;
-  padding: 24px 12px;
-  color: #a0a0a0;
-  font-size: 14px;
+.pair-device-btn {
+  --border-radius: 8px;
+  font-weight: 700;
+  font-size: 12.5px;
+  margin: 0;
+  --box-shadow: none;
 }
 
-.empty-subtext {
-  display: block;
-  color: #666;
-  font-size: 12px;
-  margin-top: 6px;
-}
-
-.token-prompt-card {
-  background: #252525;
-  border-radius: 10px;
-  padding: 14px;
-  margin-top: 14px;
-  border: 1px solid #3880ff;
+/* Inline PIN Prompt */
+.inline-token-prompt {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .prompt-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: bold;
-  color: #ffffff;
+  margin-bottom: 4px;
 }
 
-/* Scanner Full Screen Overlay styles */
+.prompt-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.prompt-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 10px;
+}
+
+.pin-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pin-input {
+  flex: 1;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.pin-submit-btn {
+  --border-radius: 10px;
+  font-weight: 700;
+  min-height: 42px;
+}
+
+/* Empty State */
+.empty-state-card {
+  text-align: center;
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+
+  ion-icon {
+    font-size: 26px;
+    color: #64748b;
+  }
+}
+
+.empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 6px;
+}
+
+.empty-subtitle {
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0 0 16px;
+  max-width: 280px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ==================== MODE 3: MANUAL ENTRY FORM ==================== */
+.form-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.optional-tag {
+  text-transform: none;
+  font-weight: normal;
+  color: #64748b;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 0 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus-within {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.input-icon {
+  font-size: 18px;
+  color: #64748b;
+  margin-right: 8px;
+}
+
+.modern-input {
+  --color: #ffffff;
+  --placeholder-color: #64748b;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --padding-start: 0;
+  font-size: 14px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.connect-btn {
+  margin-top: 18px;
+}
+
+/* Advanced Network Ports Accordion */
+.advanced-accordion {
+  margin-top: 14px;
+  background: transparent;
+
+  ion-accordion {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+  }
+}
+
+.accordion-header-item {
+  --background: rgba(255, 255, 255, 0.02);
+  --padding-start: 10px;
+  --min-height: 38px;
+}
+
+.ports-grid {
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.port-col {
+  flex: 1;
+
+  .modern-input {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    --padding-start: 10px;
+    --padding-end: 10px;
+  }
+}
+
+/* ==================== DEVELOPER & ADVANCED ACCORDION ==================== */
+.dev-tools-wrapper {
+  margin-top: 8px;
+}
+
+.dev-accordion {
+  background: transparent;
+
+  ion-accordion {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+  }
+}
+
+.dev-header-item {
+  --background: rgba(255, 255, 255, 0.015);
+  --min-height: 40px;
+  font-size: 12.5px;
+}
+
+.dev-content-box {
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dev-desc {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 0 0 10px;
+}
+
+.dev-btn {
+  --border-radius: 8px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modern-textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  --color: #ffffff;
+  --padding-start: 10px;
+  --padding-end: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+/* ==================== FULL-SCREEN CAMERA SCANNER OVERLAY ==================== */
 .scanner-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #000000;
-  z-index: 9999;
+  inset: 0;
+  background: #000000;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  color: #ffffff;
 }
 
 .scanner-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.8);
+  padding: 20px 16px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+  z-index: 10;
+}
+
+.scanner-header-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .scanner-title {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.scanner-sub {
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .scanner-close-btn {
-  --padding-end: 0;
-  --padding-start: 0;
-  margin: 0;
+  --padding-start: 4px;
+  --padding-end: 4px;
 }
 
 .scanner-viewport {
@@ -247,7 +850,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #000;
 }
 
 .scanner-video {
@@ -259,78 +861,71 @@
 
 .scanner-box {
   position: relative;
-  width: 250px;
-  height: 250px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.6);
+  width: 260px;
+  height: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.65);
   z-index: 10;
-  box-sizing: border-box;
 }
 
 .scanner-laser {
   width: 100%;
   height: 2px;
-  background-color: #3880ff;
+  background: var(--accent-cyan);
   position: absolute;
   top: 0;
   left: 0;
-  box-shadow: 0 0 8px 2px #3880ff;
-  animation: laser-scan 2.5s infinite linear;
+  box-shadow: 0 0 12px 3px var(--accent-cyan);
+  animation: laser-scan-sweep 2.4s infinite ease-in-out;
 }
 
-@keyframes laser-scan {
-  0% {
-    top: 0;
-  }
-  50% {
-    top: 100%;
-  }
-  100% {
-    top: 0;
-  }
+@keyframes laser-scan-sweep {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 100%; opacity: 1; }
+  100% { top: 0%; opacity: 0.8; }
 }
 
 .corner {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border-color: #3880ff;
+  width: 22px;
+  height: 22px;
+  border-color: var(--accent-cyan);
   border-style: solid;
 }
 
-.top-left {
+.corner.top-left {
   top: -2px;
   left: -2px;
   border-width: 4px 0 0 4px;
-  border-top-left-radius: 10px;
+  border-top-left-radius: 12px;
 }
 
-.top-right {
+.corner.top-right {
   top: -2px;
   right: -2px;
   border-width: 4px 4px 0 0;
-  border-top-right-radius: 10px;
+  border-top-right-radius: 12px;
 }
 
-.bottom-left {
+.corner.bottom-left {
   bottom: -2px;
   left: -2px;
   border-width: 0 0 4px 4px;
-  border-bottom-left-radius: 10px;
+  border-bottom-left-radius: 12px;
 }
 
-.bottom-right {
+.corner.bottom-right {
   bottom: -2px;
   right: -2px;
   border-width: 0 4px 4px 0;
-  border-bottom-right-radius: 10px;
+  border-bottom-right-radius: 12px;
 }
 
-.scanner-instructions {
-  padding: 24px;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.8);
-  font-size: 14px;
-  color: #cccccc;
+.scanner-footer {
+  padding: 24px 16px 36px;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+  z-index: 10;
 }

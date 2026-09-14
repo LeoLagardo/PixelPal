@@ -1,0 +1,45 @@
+/* =====================================================
+   Theme: Aurora Borealis (Aurora Glow)
+   Applied via: .theme-aurora-glow on .grid-layout-container
+   ===================================================== */
+
+.theme-aurora-glow {
+  /* Grid background */
+  background: linear-gradient(135deg, #021a14 0%, #064e3b 40%, #1e1b4b 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(135deg, rgba(4, 40, 30, 0.8) 0%, rgba(15, 10, 45, 0.85) 100%);
+    border: 1.5px solid rgba(52, 211, 153, 0.45);
+    border-radius: 10px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(52, 211, 153, 0.1);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+    border-color: #34d399;
+    box-shadow: 0 0 22px rgba(52, 211, 153, 0.55), inset 0 0 14px rgba(52, 211, 153, 0.2);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #34d399;
+    filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.7));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #a7f3d0;
+    text-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(52, 211, 153, 0.25);
+  }
+}

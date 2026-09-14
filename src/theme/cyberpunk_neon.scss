@@ -1,0 +1,46 @@
+/* =====================================================
+   Theme: Cyberpunk Neon
+   Applied via: .theme-cyberpunk-neon on .grid-layout-container
+   ===================================================== */
+
+.theme-cyberpunk-neon {
+  /* Grid background */
+  background: linear-gradient(135deg, #05050f 0%, #120324 50%, #001726 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(135deg, rgba(8, 20, 36, 0.8) 0%, rgba(18, 5, 36, 0.85) 100%);
+    border: 1.5px solid rgba(0, 240, 255, 0.45);
+    border-radius: 8px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.18), inset 0 0 10px rgba(0, 240, 255, 0.08);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(255, 0, 128, 0.2) 100%);
+    border-color: #00f0ff;
+    box-shadow: 0 0 22px rgba(0, 240, 255, 0.55), inset 0 0 14px rgba(0, 240, 255, 0.25);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #00f0ff;
+    filter: drop-shadow(0 0 8px #00f0ff);
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #e0f7fa;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(0, 240, 255, 0.25);
+  }
+}

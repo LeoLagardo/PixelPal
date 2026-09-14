@@ -6,7 +6,8 @@ import { ScreenConfig, ButtonConfig, ButtonAction, PairedDevice } from '../model
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DeckButtonComponent } from '../components/deck-button.component';
-import { ScreensaverClockComponent } from '../components/screensaver-clock.component';
+import { RetroClockComponent } from '../components/retro-clock.component';
+import { StandbyClockComponent } from '../components/standby-clock.component';
 import { fromEvent, merge, startWith, Subscription, switchMap, tap, timer } from 'rxjs';
 import {
   IonButton,
@@ -51,7 +52,8 @@ export { GRADIENT_THEMES };
     GridButtonsPipe,
     GridThemePipe,
     DeckButtonComponent,
-    ScreensaverClockComponent,
+    RetroClockComponent,
+    StandbyClockComponent,
     PixelHeartComponent,
     CompanionRobotComponent,
     IonButton,
@@ -97,6 +99,16 @@ export class HomePage implements OnInit, OnDestroy {
   public isInactive = false;
   public isPro = false;
   private readonly INACTIVITY_MS = 5000;
+
+  public getMediaType(screen: any): 'retro-clock' | 'standby-clock' | 'companion' | 'heart' | 'unknown' {
+    const name = screen?.config?.source?.name;
+    const id = screen?.id;
+    if (name === 'standby-clock' || id === 'tpl-media-standby-clock') return 'standby-clock';
+    if (name === 'companion' || id === 'tpl-media-companion' || id === 'app-companion-robot') return 'companion';
+    if (name === 'retro-clock' || name === 'clock' || id === 'tpl-media-clock' || id === 'tpl-media-retro-clock') return 'retro-clock';
+    if (name === 'heart' || id === 'app-heart-animation') return 'heart';
+    return 'unknown';
+  }
 
   constructor(
     public companionService: CompanionService,

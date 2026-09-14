@@ -1,0 +1,45 @@
+/* =====================================================
+   Theme: Crimson Void
+   Applied via: .theme-crimson-void on .grid-layout-container
+   ===================================================== */
+
+.theme-crimson-void {
+  /* Grid background */
+  background: linear-gradient(135deg, #150004 0%, #38040e 50%, #680b1e 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(145deg, rgba(45, 6, 14, 0.85) 0%, rgba(20, 2, 6, 0.9) 100%);
+    border: 1.5px solid rgba(239, 68, 68, 0.45);
+    border-radius: 9px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.22), inset 0 0 10px rgba(239, 68, 68, 0.1);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(145deg, rgba(90, 12, 28, 0.95) 0%, rgba(45, 6, 14, 0.95) 100%);
+    border-color: #f87171;
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.6), inset 0 0 14px rgba(239, 68, 68, 0.25);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #f87171;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.7));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #fecaca;
+    text-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+}

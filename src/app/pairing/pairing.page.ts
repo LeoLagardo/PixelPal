@@ -9,18 +9,21 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonItem,
   IonInput,
   IonButton,
+  IonButtons,
+  IonBackButton,
   IonTextarea,
   IonToast,
   IonIcon,
   IonSpinner,
-  IonBadge
+  IonBadge,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonAccordion,
+  IonAccordionGroup
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -32,7 +35,20 @@ import {
   refreshOutline,
   checkmarkCircleOutline,
   desktopOutline,
-  flashOutline
+  flashOutline,
+  arrowBackOutline,
+  wifiOutline,
+  keyOutline,
+  clipboardOutline,
+  helpCircleOutline,
+  codeSlashOutline,
+  chevronForwardOutline,
+  informationCircleOutline,
+  laptopOutline,
+  hardwareChipOutline,
+  scanOutline,
+  alertCircleOutline,
+  shieldCheckmarkOutline
 } from 'ionicons/icons';
 import jsQR from 'jsqr';
 
@@ -47,25 +63,28 @@ import jsQR from 'jsqr';
     IonToolbar,
     IonTitle,
     IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
     IonItem,
     IonInput,
     IonButton,
+    IonButtons,
+    IonBackButton,
     IonTextarea,
     IonToast,
     IonIcon,
     IonSpinner,
-    IonBadge
+    IonBadge,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonAccordion,
+    IonAccordionGroup
   ]
 })
 export class PairingPage implements OnInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
-  public mode: 'json' | 'scan' | 'manual' = 'json';
+  public mode: 'qr' | 'scan' | 'manual' = 'qr';
   public rawJson = '';
   public ip = '';
   public port: number | null = 53535;
@@ -98,17 +117,30 @@ export class PairingPage implements OnInit, OnDestroy {
       refreshOutline,
       checkmarkCircleOutline,
       desktopOutline,
-      flashOutline
+      flashOutline,
+      arrowBackOutline,
+      wifiOutline,
+      keyOutline,
+      clipboardOutline,
+      helpCircleOutline,
+      codeSlashOutline,
+      chevronForwardOutline,
+      informationCircleOutline,
+      laptopOutline,
+      hardwareChipOutline,
+      scanOutline,
+      alertCircleOutline,
+      shieldCheckmarkOutline
     });
   }
 
   ngOnInit() {
-    // On native devices, optionally default to scan mode; on web default to json
+    // On native devices default to scan or qr; on web default to qr
     if (Capacitor.isNativePlatform()) {
       this.mode = 'scan';
       this.triggerNetworkScan();
     } else {
-      this.mode = 'json';
+      this.mode = 'qr';
     }
   }
 
@@ -116,13 +148,55 @@ export class PairingPage implements OnInit, OnDestroy {
     this.stopScanning();
   }
 
-  public setMode(mode: 'json' | 'scan' | 'manual') {
+  public setMode(mode: 'qr' | 'scan' | 'manual') {
     this.mode = mode;
+    if (mode === 'scan' && !this.hasScanned) {
+      this.triggerNetworkScan();
+    }
+  }
+
+  public onSegmentChange(event: any) {
+    const val = event?.detail?.value;
+    if (val === 'qr' || val === 'scan' || val === 'manual') {
+      this.setMode(val);
+    }
   }
 
   public onJsonInput(event: any) {
     if (event?.detail?.value !== undefined) {
       this.rawJson = event.detail.value;
+    }
+  }
+
+  public async pasteFromClipboard() {
+    try {
+      if (!navigator?.clipboard?.readText) {
+        this.triggerToast('Clipboard API not available in this browser environment.');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (!text || !text.trim()) {
+        this.triggerToast('Clipboard is empty.');
+        return;
+      }
+      const clean = text.trim();
+      if (clean.includes('{') && clean.includes('}')) {
+        this.rawJson = clean;
+        this.parseAndPair(clean);
+      } else if (clean.length === 4 && /^\d+$/.test(clean)) {
+        this.token = clean;
+        this.mode = 'manual';
+        this.triggerToast(`Pasted PIN: ${clean}. Enter your PC IP address to pair.`);
+      } else if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(clean)) {
+        this.ip = clean;
+        this.mode = 'manual';
+        this.triggerToast(`Pasted PC IP: ${clean}. Enter your 4-digit PIN to pair.`);
+      } else {
+        this.rawJson = clean;
+        this.parseAndPair(clean);
+      }
+    } catch (err: any) {
+      this.triggerToast('Unable to read clipboard. You can paste into the fields manually.');
     }
   }
 
@@ -134,7 +208,7 @@ export class PairingPage implements OnInit, OnDestroy {
     try {
       this.discoveredDevices = await this.companionService.scanNetwork(2500, 53537);
       if (this.discoveredDevices.length === 0 && Capacitor.isNativePlatform()) {
-        this.triggerToast('No active PCs found on Wi-Fi. Try QR / JSON or Manual Entry.');
+        this.triggerToast('No active PCs found on local Wi-Fi. Make sure PixelPal is open on your PC.');
       }
     } catch (e: any) {
       this.triggerToast('Network scan error: ' + (e?.message || e));
@@ -164,7 +238,7 @@ export class PairingPage implements OnInit, OnDestroy {
   public confirmDiscoveredPairing() {
     if (!this.selectedDeviceForPairing) return;
     if (!this.scanPairToken.trim()) {
-      this.triggerToast('Please enter the pairing token.');
+      this.triggerToast('Please enter the 4-digit PIN shown in PixelPal on your PC.');
       return;
     }
 
@@ -198,7 +272,7 @@ export class PairingPage implements OnInit, OnDestroy {
 
     } catch (err) {
       console.error('Error accessing camera:', err);
-      this.triggerToast('Unable to access camera. Please verify camera permissions.');
+      this.triggerToast('Unable to access camera. Please check camera permissions or use Auto-Detect.');
       this.scanning = false;
     }
   }
@@ -250,15 +324,15 @@ export class PairingPage implements OnInit, OnDestroy {
 
   public pairWithJson() {
     if (!this.rawJson || !this.rawJson.trim()) {
-      this.triggerToast('Please paste a raw JSON pairing string.');
+      this.triggerToast('Please paste a pairing JSON string.');
       return;
     }
     this.parseAndPair(this.rawJson);
   }
 
-  private parseAndPair(inputStr: string) {
+  public parseAndPair(inputStr: string) {
     if (!inputStr) {
-      this.triggerToast('Pairing string is empty.');
+      this.triggerToast('Pairing data is empty.');
       return;
     }
 
@@ -292,13 +366,13 @@ export class PairingPage implements OnInit, OnDestroy {
       }
 
       const port = Number(parsed.port) || 53535;
-      const token = parsed.token || parsed.auth_token || parsed.secret || parsed.key;
+      const token = parsed.token || parsed.auth_token || parsed.secret || parsed.key || parsed.pin;
       const mediaPort = parsed.media_port ? Number(parsed.media_port) : 53536;
       const udpPort = parsed.udp_port ? Number(parsed.udp_port) : 53537;
       const deviceName = parsed.device_name || parsed.name || parsed.hostname || `PC at ${ip}`;
 
       if (!ip || !token) {
-        this.triggerToast('Invalid pairing data. Must include "ip" and "token".');
+        this.triggerToast('Invalid pairing data. Missing PC IP address or pairing PIN.');
         return;
       }
 
@@ -313,13 +387,13 @@ export class PairingPage implements OnInit, OnDestroy {
       });
     } catch (e: any) {
       console.error('[PairingPage] JSON parse error:', e, inputStr);
-      this.triggerToast('Failed to parse pairing JSON string. Please check formatting.');
+      this.triggerToast('Failed to parse pairing data. Please check code or try manual PIN.');
     }
   }
 
   public pairWithManual() {
     if (!this.ip.trim() || !this.token.trim()) {
-      this.triggerToast('Please fill out IP address and Pairing Token.');
+      this.triggerToast('Please fill out both the PC IP address and pairing PIN.');
       return;
     }
 
@@ -352,13 +426,13 @@ export class PairingPage implements OnInit, OnDestroy {
 
   private executePairing(device: PairedDevice) {
     this.companionService.pairDevice(device);
-    this.triggerToast('Successfully Paired with ' + (device.name || device.ip) + '!');
+    this.triggerToast('Paired with ' + (device.name || device.ip) + '!');
     setTimeout(() => {
       this.router.navigateByUrl('/home', { replaceUrl: true });
-    }, 800);
+    }, 600);
   }
 
-  private triggerToast(msg: string) {
+  public triggerToast(msg: string) {
     this.toastMsg = msg;
     this.showToast = true;
   }
