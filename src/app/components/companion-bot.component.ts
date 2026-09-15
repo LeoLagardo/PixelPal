@@ -1,16 +1,50 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type RobotExpression =
+  // Row 1
   | 'neutral'
   | 'happy'
-  | 'surprised'
-  | 'sad'
-  | 'sleepy'
-  | 'angry'
-  | 'nervous'
-  | 'relaxed'
+  | 'big-smile'
   | 'laughing'
+  | 'laughing-tears'
+  | 'excited'
+  | 'love'
+  // Row 2
+  | 'blushing'
+  | 'curious'
+  | 'confused'
+  | 'thinking'
+  | 'surprised'
+  | 'surprised-open'
+  | 'shocked'
+  // Row 3
+  | 'sad'
+  | 'crying'
+  | 'worried'
+  | 'worried-alt'
+  | 'scared'
+  | 'angry'
+  | 'annoyed'
+  // Row 4
+  | 'embarrassed'
+  | 'shy'
+  | 'mischievous'
+  | 'mischievous-alt'
+  | 'playful'
+  | 'bored'
+  | 'sleepy'
+  // Row 5
+  | 'sleeping'
+  | 'proud'
+  | 'suspicious'
+  | 'suspicious-alt'
+  | 'celebrating'
+  | 'greeting'
+  | 'lonely'
+  // Backward compatibility aliases
+  | 'relaxed'
+  | 'nervous'
   | 'frustrated';
 
 type MicroBehavior =
@@ -22,1092 +56,1177 @@ type MicroBehavior =
   | 'look-right'
   | 'look-around'
   | 'tiny-smile'
-  | 'smile-fade'
   | 'eye-pulse'
-  | 'startle'
-  | 'settle'
-  | 'doze';
+  | 'settle';
 
-type TransitionStyle = 'soft' | 'snap' | 'melt' | 'blink';
+interface ExpressionCategory {
+  name: string;
+  expressions: { id: RobotExpression; label: string; icon: string }[];
+}
 
 @Component({
   selector: 'app-companion-robot',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="stage">
-      <div class="device">
-        <div class="screen">
-          <div
-            class="face"
-            [attr.data-state]="currentState"
-            [attr.data-transition]="transitionStyle"
-            [class.is-transitioning]="isTransitioning"
-            [class.micro-active]="microBehavior !== 'none'"
-            [class.micro-blink]="microBehavior === 'blink'"
-            [class.micro-double-blink]="microBehavior === 'double-blink'"
-            [class.micro-slow-blink]="microBehavior === 'slow-blink'"
-            [class.micro-look-left]="microBehavior === 'look-left'"
-            [class.micro-look-right]="microBehavior === 'look-right'"
-            [class.micro-look-around]="microBehavior === 'look-around'"
-            [class.micro-tiny-smile]="microBehavior === 'tiny-smile'"
-            [class.micro-smile-fade]="microBehavior === 'smile-fade'"
-            [class.micro-eye-pulse]="microBehavior === 'eye-pulse'"
-            [class.micro-startle]="microBehavior === 'startle'"
-            [class.micro-settle]="microBehavior === 'settle'"
-            [class.micro-doze]="microBehavior === 'doze'"
-            [style.--intensity]="expressionIntensity"
-            [style.--attention]="attention"
-            [style.--energy]="energy"
-          >
-            <!-- Eyes -->
-            <div class="eyes">
-              <div class="eye left">
-                <div class="pupil"></div>
-                <div class="highlight"></div>
-              </div>
-              <div class="eye right">
-                <div class="pupil"></div>
-                <div class="highlight"></div>
-              </div>
-            </div>
+    <div class="stage" (click)="onStageClick($event)">
+      <!-- Robot Monitor / Bezel Frame -->
+      <div
+        class="robot-screen-frame"
+        [attr.data-state]="normalizedState"
+        [class.is-transitioning]="isTransitioning"
+        [class.theme-angry]="normalizedState === 'angry'"
+        [class.theme-love]="normalizedState === 'love'"
+        [class.theme-blush]="isBlushState"
+        (click)="onScreenTap($event)"
+      >
+        <!-- Ambient Screen Glow Bloom -->
+        <div class="ambient-glow"></div>
 
-            <!-- Angry / frustrated glyph -->
-            <div
-              class="glyph"
-              [class.visible]="currentState === 'angry' || currentState === 'frustrated'"
-            >
-              <svg width="100" height="70" viewBox="0 0 100 70">
-                <path d="M 8 8 L 30 26 L 8 44" />
-                <path d="M 92 8 L 70 26 L 92 44" />
-                <path d="M 35 58 L 65 58" />
-              </svg>
-            </div>
+        <!-- Bezel Camera / Sensor Dot -->
+        <div class="bezel-sensor"></div>
 
-            <!-- Mouth -->
-            <div class="mouth" [class.visible]="showMouth">
-              <div class="mouth-shape" [attr.data-mouth]="mouthShape"></div>
-            </div>
+        <!-- Glass Reflection Glare -->
+        <div class="glass-glare"></div>
 
-            <!-- Cheeks -->
-            <div class="cheeks" [class.visible]="showCheeks">
-              <div class="cheek left"></div>
-              <div class="cheek right"></div>
-            </div>
+        <!-- SVG Robot Face Display -->
+        <svg
+          class="face-svg"
+          viewBox="0 0 360 220"
+          preserveAspectRatio="xMidYMid meet"
+          [attr.data-state]="normalizedState"
+          [class.micro-look-left]="microBehavior === 'look-left'"
+          [class.micro-look-right]="microBehavior === 'look-right'"
+          [class.micro-look-around]="microBehavior === 'look-around'"
+          [class.micro-blink]="microBehavior === 'blink'"
+          [class.micro-double-blink]="microBehavior === 'double-blink'"
+          [class.micro-slow-blink]="microBehavior === 'slow-blink'"
+          [class.micro-eye-pulse]="microBehavior === 'eye-pulse'"
+          [class.micro-settle]="microBehavior === 'settle'"
+        >
+          <defs>
+            <!-- Cheek Blush Gradient -->
+            <radialGradient id="pinkBlush" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff4f8b" stop-opacity="0.85" />
+              <stop offset="45%" stop-color="#ff4f8b" stop-opacity="0.5" />
+              <stop offset="100%" stop-color="#ff4f8b" stop-opacity="0" />
+            </radialGradient>
 
-            <!-- Nervous sweat -->
-            @if (currentState === 'nervous' || currentState === 'frustrated') {
-              <div class="sweat">
-                <span class="sweat-drop sweat-left"></span>
-                <span class="sweat-drop sweat-right"></span>
-              </div>
+            <!-- Love Pink Radial -->
+            <radialGradient id="loveGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff99bb" />
+              <stop offset="70%" stop-color="#ff3b7a" />
+              <stop offset="100%" stop-color="#e61558" />
+            </radialGradient>
+
+            <!-- Tongue Gradient -->
+            <linearGradient id="tongueGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff7597" />
+              <stop offset="100%" stop-color="#e02958" />
+            </linearGradient>
+
+            <!-- Star Sparkle Clip -->
+            <clipPath id="leftStarClip">
+              <path d="M 116 64 Q 116 96 84 96 Q 116 96 116 128 Q 116 96 148 96 Q 116 96 116 64 Z" />
+            </clipPath>
+          </defs>
+
+          <!-- 1. CHEEK BLUSH LAYER -->
+          @if (isBlushState) {
+            <g class="cheeks-layer">
+              <ellipse class="cheek-blush left" cx="80" cy="136" rx="24" ry="13" fill="url(#pinkBlush)" />
+              <ellipse class="cheek-blush right" cx="280" cy="136" rx="24" ry="13" fill="url(#pinkBlush)" />
+            </g>
+          }
+
+          <!-- 2. EYEBROWS LAYER -->
+          <g class="eyebrows-group" [attr.data-state]="normalizedState">
+            @switch (normalizedState) {
+              @case ('angry') {
+                <path class="eyebrow angry-l" d="M 84 60 L 144 82" />
+                <path class="eyebrow angry-r" d="M 276 60 L 216 82" />
+              }
+              @case ('confused') {
+                <path class="eyebrow confused-l" d="M 88 50 Q 116 38, 142 54" />
+                <path class="eyebrow confused-r" d="M 218 68 L 266 74" />
+              }
+              @case ('thinking') {
+                <path class="eyebrow thinking-l" d="M 92 58 Q 116 48, 140 56" />
+                <path class="eyebrow thinking-r" d="M 220 54 Q 244 44, 268 52" />
+              }
+              @case ('worried') {
+                <path class="eyebrow worried-l" d="M 90 70 L 142 54" />
+                <path class="eyebrow worried-r" d="M 270 70 L 218 54" />
+              }
+              @case ('worried-alt') {
+                <path class="eyebrow worried-l" d="M 90 70 L 142 54" />
+                <path class="eyebrow worried-r" d="M 270 70 L 218 54" />
+              }
+              @case ('scared') {
+                <path class="eyebrow scared-l" d="M 90 68 Q 116 54, 142 66" />
+                <path class="eyebrow scared-r" d="M 270 68 Q 244 54, 218 66" />
+              }
+              @case ('mischievous') {
+                <path class="eyebrow sly-l" d="M 94 62 L 138 62" />
+                <path class="eyebrow sly-r" d="M 218 58 Q 244 42, 270 56" />
+              }
+              @case ('proud') {
+                <path class="eyebrow proud-l" d="M 92 64 Q 116 56, 142 66" />
+                <path class="eyebrow proud-r" d="M 268 64 Q 244 56, 218 66" />
+              }
+              @case ('annoyed') {
+                <path class="eyebrow flat-l" d="M 88 68 L 144 76" />
+                <path class="eyebrow flat-r" d="M 272 68 L 216 76" />
+              }
+              @case ('suspicious') {
+                <path class="eyebrow flat-l" d="M 90 74 L 144 78" />
+                <path class="eyebrow flat-r" d="M 270 74 L 216 78" />
+              }
+              @case ('suspicious-alt') {
+                <path class="eyebrow flat-l" d="M 90 74 L 144 78" />
+                <path class="eyebrow flat-r" d="M 270 74 L 216 78" />
+              }
             }
+          </g>
 
-            <!-- Sleep Zzz -->
-            @if (currentState === 'sleepy') {
-              <div class="sleep-particles">
-                @for (z of sleepZs; track $index) {
-                  <span
-                    class="sleep-z"
-                    [style.--delay]="z.delay + 's'"
-                    [style.--x]="z.x + 'px'"
-                    [style.--y]="z.y + 'px'"
-                  >Z</span>
+          <!-- 3. EYES LAYER -->
+          <g class="eyes-layer">
+            <!-- LEFT EYE -->
+            <g class="eye-group left-eye" transform-origin="116 96">
+              @switch (getEyeType('left')) {
+                @case ('squircle') {
+                  <path
+                    class="eye-fill"
+                    d="M 89 74 C 89 64, 143 64, 143 74 C 146 94, 146 108, 143 120 C 143 130, 89 130, 89 120 C 86 108, 86 94, 89 74 Z"
+                  />
+                  <!-- Inner pupil & shine -->
+                  <circle class="eye-pupil" cx="116" cy="98" r="9" />
+                  <circle class="eye-shine" cx="106" cy="84" r="5.5" />
                 }
-              </div>
-            }
-
-            <!-- Happy / laughing sparkles -->
-            @if (currentState === 'happy' || currentState === 'laughing') {
-              <div class="sparkles">
-                @for (s of sparkles; track $index) {
-                  <div
-                    class="sparkle"
-                    [style.--sx]="s.x + '%'"
-                    [style.--sy]="s.y + '%'"
-                    [style.--delay]="s.delay + 's'"
-                  ></div>
+                @case ('happy-arc') {
+                  <path class="eye-stroke" d="M 88 108 C 88 64, 144 64, 144 108" />
                 }
+                @case ('squeezed') {
+                  <path class="eye-stroke" d="M 90 88 L 122 98 L 90 108" />
+                  <line class="eye-crease" x1="122" y1="98" x2="136" y2="98" />
+                }
+                @case ('heart') {
+                  <g class="heart-pulse">
+                    <path
+                      class="eye-fill heart-fill"
+                      d="M 116 76 C 100 56, 78 78, 102 108 L 116 122 L 130 108 C 154 78, 132 56, 116 76 Z"
+                      fill="url(#loveGlow)"
+                    />
+                    <circle class="eye-shine" cx="106" cy="84" r="4.5" />
+                  </g>
+                }
+                @case ('sparkle-star') {
+                  <path
+                    class="eye-fill star-fill"
+                    d="M 116 62 Q 116 96 82 96 Q 116 96 116 130 Q 116 96 150 96 Q 116 96 116 62 Z"
+                  />
+                  <circle class="star-center-shine" cx="116" cy="96" r="6" />
+                }
+                @case ('circle-open') {
+                  <circle class="eye-fill" cx="116" cy="96" r="32" />
+                  <circle class="eye-pupil" cx="116" cy="96" r="14" />
+                  <circle class="eye-shine" cx="109" cy="88" r="6" />
+                }
+                @case ('circle-shocked') {
+                  <circle class="eye-fill" cx="116" cy="96" r="33" />
+                  <circle class="eye-pupil" cx="116" cy="96" r="7" />
+                  <circle class="eye-shine" cx="113" cy="93" r="3" />
+                }
+                @case ('sad-droop') {
+                  <path
+                    class="eye-fill"
+                    d="M 88 114 C 84 90, 128 72, 142 86 C 148 96, 140 122, 124 122 C 108 122, 90 122, 88 114 Z"
+                  />
+                  <circle class="eye-shine" cx="128" cy="96" r="6" />
+                }
+                @case ('angry-slant') {
+                  <path
+                    class="eye-fill"
+                    d="M 90 76 L 144 100 C 144 116, 132 124, 118 124 C 100 124, 86 114, 90 76 Z"
+                  />
+                }
+                @case ('half-lid') {
+                  <path
+                    class="eye-fill"
+                    d="M 90 92 L 142 92 C 144 110, 140 120, 130 122 C 118 124, 98 124, 92 122 C 86 118, 86 108, 90 92 Z"
+                  />
+                  <circle class="eye-pupil" cx="116" cy="108" r="7" />
+                  <circle class="eye-shine" cx="108" cy="99" r="4" />
+                }
+                @case ('sleepy-curve') {
+                  <path class="eye-stroke" d="M 90 102 C 92 118, 140 118, 142 102" />
+                }
+                @case ('thinking') {
+                  <path
+                    class="eye-fill"
+                    d="M 89 74 C 89 64, 143 64, 143 74 C 146 94, 146 108, 143 120 C 143 130, 89 130, 89 120 C 86 108, 86 94, 89 74 Z"
+                  />
+                  <circle class="eye-pupil" cx="126" cy="85" r="9" />
+                  <circle class="eye-shine" cx="123" cy="80" r="4" />
+                }
+                @case ('watery') {
+                  <path
+                    class="eye-fill"
+                    d="M 88 114 C 84 90, 128 72, 142 86 C 148 96, 140 122, 124 122 C 108 122, 90 122, 88 114 Z"
+                  />
+                  <!-- Multiple sparkling anime highlights -->
+                  <circle class="eye-shine-large" cx="106" cy="88" r="9" />
+                  <circle class="eye-shine-med" cx="128" cy="108" r="6" />
+                  <circle class="eye-shine-small" cx="112" cy="112" r="3.5" />
+                }
+                @case ('shy') {
+                  <path
+                    class="eye-fill"
+                    d="M 90 94 L 140 100 C 138 118, 128 122, 114 122 C 96 122, 88 114, 90 94 Z"
+                  />
+                  <circle class="eye-pupil" cx="108" cy="111" r="7" />
+                  <circle class="eye-shine" cx="103" cy="104" r="3.5" />
+                }
+              }
+            </g>
+
+            <!-- RIGHT EYE -->
+            <g class="eye-group right-eye" transform-origin="244 96">
+              @switch (getEyeType('right')) {
+                @case ('squircle') {
+                  <path
+                    class="eye-fill"
+                    d="M 217 74 C 217 64, 271 64, 271 74 C 274 94, 274 108, 271 120 C 271 130, 217 130, 217 120 C 214 108, 214 94, 217 74 Z"
+                  />
+                  <circle class="eye-pupil" cx="244" cy="98" r="9" />
+                  <circle class="eye-shine" cx="234" cy="84" r="5.5" />
+                }
+                @case ('happy-arc') {
+                  <path class="eye-stroke" d="M 216 108 C 216 64, 272 64, 272 108" />
+                }
+                @case ('squeezed') {
+                  <path class="eye-stroke" d="M 270 88 L 238 98 L 270 108" />
+                  <line class="eye-crease" x1="238" y1="98" x2="224" y2="98" />
+                }
+                @case ('heart') {
+                  <g class="heart-pulse">
+                    <path
+                      class="eye-fill heart-fill"
+                      d="M 244 76 C 228 56, 206 78, 230 108 L 244 122 L 258 108 C 282 78, 260 56, 244 76 Z"
+                      fill="url(#loveGlow)"
+                    />
+                    <circle class="eye-shine" cx="234" cy="84" r="4.5" />
+                  </g>
+                }
+                @case ('sparkle-star') {
+                  <path
+                    class="eye-fill star-fill"
+                    d="M 244 62 Q 244 96 210 96 Q 244 96 244 130 Q 244 96 278 96 Q 244 96 244 62 Z"
+                  />
+                  <circle class="star-center-shine" cx="244" cy="96" r="6" />
+                }
+                @case ('circle-open') {
+                  <circle class="eye-fill" cx="244" cy="96" r="32" />
+                  <circle class="eye-pupil" cx="244" cy="96" r="14" />
+                  <circle class="eye-shine" cx="237" cy="88" r="6" />
+                }
+                @case ('circle-shocked') {
+                  <circle class="eye-fill" cx="244" cy="96" r="33" />
+                  <circle class="eye-pupil" cx="244" cy="96" r="7" />
+                  <circle class="eye-shine" cx="241" cy="93" r="3" />
+                }
+                @case ('wink') {
+                  <path class="eye-stroke wink-stroke" d="M 218 98 C 228 114, 258 114, 268 98" />
+                }
+                @case ('sad-droop') {
+                  <path
+                    class="eye-fill"
+                    d="M 272 114 C 276 90, 232 72, 218 86 C 212 96, 220 122, 236 122 C 252 122, 270 122, 272 114 Z"
+                  />
+                  <circle class="eye-shine" cx="232" cy="96" r="6" />
+                }
+                @case ('angry-slant') {
+                  <path
+                    class="eye-fill"
+                    d="M 270 76 L 216 100 C 216 116, 228 124, 242 124 C 260 124, 274 114, 270 76 Z"
+                  />
+                }
+                @case ('half-lid') {
+                  <path
+                    class="eye-fill"
+                    d="M 218 92 L 270 92 C 274 110, 270 120, 260 122 C 248 124, 228 124, 222 122 C 216 118, 216 108, 218 92 Z"
+                  />
+                  <circle class="eye-pupil" cx="244" cy="108" r="7" />
+                  <circle class="eye-shine" cx="236" cy="99" r="4" />
+                }
+                @case ('sleepy-curve') {
+                  <path class="eye-stroke" d="M 218 102 C 220 118, 268 118, 270 102" />
+                }
+                @case ('thinking') {
+                  <path
+                    class="eye-fill"
+                    d="M 217 74 C 217 64, 271 64, 271 74 C 274 94, 274 108, 271 120 C 271 130, 217 130, 217 120 C 214 108, 214 94, 217 74 Z"
+                  />
+                  <circle class="eye-pupil" cx="254" cy="85" r="9" />
+                  <circle class="eye-shine" cx="251" cy="80" r="4" />
+                }
+                @case ('watery') {
+                  <path
+                    class="eye-fill"
+                    d="M 272 114 C 276 90, 232 72, 218 86 C 212 96, 220 122, 236 122 C 252 122, 270 122, 272 114 Z"
+                  />
+                  <circle class="eye-shine-large" cx="234" cy="88" r="9" />
+                  <circle class="eye-shine-med" cx="256" cy="108" r="6" />
+                  <circle class="eye-shine-small" cx="240" cy="112" r="3.5" />
+                }
+                @case ('shy') {
+                  <path
+                    class="eye-fill"
+                    d="M 270 94 L 220 100 C 222 118, 232 122, 246 122 C 264 122, 272 114, 270 94 Z"
+                  />
+                  <circle class="eye-pupil" cx="236" cy="111" r="7" />
+                  <circle class="eye-shine" cx="231" cy="104" r="3.5" />
+                }
+              }
+            </g>
+          </g>
+
+          <!-- 4. MOUTH LAYER -->
+          <g class="mouth-group">
+            @switch (getMouthType()) {
+              @case ('dash') {
+                <rect class="mouth-shape" x="170" y="154" width="20" height="5" rx="2.5" />
+              }
+              @case ('smile') {
+                <path class="mouth-stroke" d="M 166 150 Q 180 164, 194 150" />
+              }
+              @case ('big-smile') {
+                <path class="mouth-shape" d="M 160 146 Q 180 150, 200 146 C 200 168, 160 168, 160 146 Z" />
+              }
+              @case ('laughing') {
+                <g class="laughing-mouth">
+                  <path class="mouth-shape" d="M 156 144 Q 180 148, 204 144 C 206 174, 154 174, 156 144 Z" />
+                  <!-- Glowing pink tongue -->
+                  <path d="M 164 162 Q 180 152, 196 162 C 196 172, 164 172, 164 162 Z" fill="url(#tongueGrad)" />
+                </g>
+              }
+              @case ('open-o') {
+                <circle class="mouth-stroke" cx="180" cy="156" r="8" />
+              }
+              @case ('shocked-o') {
+                <ellipse class="mouth-stroke" cx="180" cy="158" rx="8" ry="14" />
+              }
+              @case ('frown') {
+                <path class="mouth-stroke" d="M 166 164 Q 180 150, 194 164" />
+              }
+              @case ('crying-open') {
+                <path class="mouth-shape" d="M 164 154 Q 180 146, 196 154 C 192 172, 168 172, 164 154 Z" />
+              }
+              @case ('squiggle') {
+                <path class="mouth-stroke" d="M 164 158 Q 172 152, 180 158 T 196 158" />
+              }
+              @case ('dots') {
+                <circle class="mouth-shape" cx="170" cy="158" r="3.5" />
+                <circle class="mouth-shape" cx="180" cy="158" r="3.5" />
+                <circle class="mouth-shape" cx="190" cy="158" r="3.5" />
+              }
+              @case ('smirk') {
+                <path class="mouth-stroke" d="M 166 160 Q 182 164, 198 148" />
+              }
+              @case ('tiny-dot') {
+                <circle class="mouth-shape" cx="180" cy="158" r="3.5" />
+              }
+            }
+          </g>
+
+          <!-- 5. EMOTION ACCENTS & PROPS LAYER -->
+          <!-- A. Confused Question Mark -->
+          @if (normalizedState === 'confused') {
+            <text class="accent-glow accent-bob float-question" x="272" y="58">?</text>
+          }
+
+          <!-- B. Angry Anime Vein (💢) -->
+          @if (normalizedState === 'angry') {
+            <g class="anger-vein" transform="translate(272, 40)">
+              <path d="M -10 -3 C -3 -3, 3 -9, 3 -16 M -3 -10 C -3 -3, 3 3, 10 3 M 3 -16 C 10 -16, 16 -10, 16 -3 M 10 3 C 16 3, 22 -3, 22 -10" />
+            </g>
+          }
+
+          <!-- C. Sleeping Zzz Floating Letters -->
+          @if (normalizedState === 'sleeping') {
+            <g class="sleep-zzz-group">
+              <text class="sleep-z z1" x="252" y="58">Z</text>
+              <text class="sleep-z z2" x="268" y="44">z</text>
+              <text class="sleep-z z3" x="284" y="30">z</text>
+            </g>
+          }
+
+          <!-- D. Crying Streams and Teardrops -->
+          @if (normalizedState === 'crying') {
+            <g class="crying-streams">
+              <path class="tear-stream left" d="M 106 122 Q 102 145, 106 172" />
+              <path class="tear-stream right" d="M 254 122 Q 258 145, 254 172" />
+              <circle class="tear-drop left" cx="106" cy="180" r="4.5" />
+              <circle class="tear-drop right" cx="254" cy="180" r="4.5" />
+              <circle class="tear-splash" cx="98" cy="186" r="2.5" />
+              <circle class="tear-splash" cx="262" cy="186" r="2.5" />
+            </g>
+          }
+
+          <!-- E. Lonely Single Tear -->
+          @if (normalizedState === 'lonely') {
+            <g class="lonely-tear">
+              <path class="tear-stream right" d="M 254 122 Q 256 142, 254 165" />
+              <circle class="tear-drop right" cx="254" cy="172" r="4" />
+            </g>
+          }
+
+          <!-- F. Joy Tears (Laughing with tears) -->
+          @if (normalizedState === 'laughing-tears' || normalizedState === 'excited') {
+            <g class="joy-tears">
+              <path class="joy-tear-drop left" d="M 76 96 C 66 86, 62 104, 76 96 Z" />
+              <path class="joy-tear-drop right" d="M 284 96 C 294 86, 298 104, 284 96 Z" />
+              <circle class="tear-splash" cx="64" cy="106" r="3" />
+              <circle class="tear-splash" cx="296" cy="106" r="3" />
+            </g>
+          }
+
+          <!-- G. Sweat Drop (Shocked / Scared) -->
+          @if (normalizedState === 'shocked' || normalizedState === 'scared') {
+            <g class="sweat-accent">
+              <path class="sweat-drop-shape" d="M 278 46 C 270 58, 286 58, 278 46 Z" />
+              @if (normalizedState === 'scared') {
+                <path class="sweat-drop-shape left-sweat" d="M 82 46 C 74 58, 90 58, 82 46 Z" />
+              }
+            </g>
+          }
+
+          <!-- H. Celebrating Floating Confetti -->
+          @if (normalizedState === 'celebrating') {
+            <g class="confetti-group">
+              <rect class="confetti c1" x="50" y="40" width="7" height="4" rx="1.5" />
+              <rect class="confetti c2" x="75" y="70" width="5" height="5" rx="1" />
+              <circle class="confetti c3" cx="180" cy="30" r="3.5" />
+              <rect class="confetti c4" x="285" y="45" width="6" height="4" rx="1.5" />
+              <circle class="confetti c5" cx="310" cy="75" r="3" />
+              <rect class="confetti c6" x="60" y="150" width="6" height="4" rx="1.5" />
+              <rect class="confetti c7" x="300" y="145" width="7" height="4" rx="1.5" />
+              <circle class="confetti c8" cx="180" cy="188" r="3" />
+            </g>
+          }
+
+          <!-- I. Greeting Waving Robotic Hand (👋) -->
+          @if (normalizedState === 'greeting') {
+            <g class="waving-hand-robot" transform="translate(42, 114)">
+              <!-- Palm -->
+              <path
+                class="hand-stroke"
+                d="M -6 12 C -10 12, -14 6, -14 0 L -14 -12 C -14 -16, -10 -18, -6 -18 C -2 -18, 0 -15, 0 -12 L 0 -18 C 0 -22, 4 -24, 8 -24 C 12 -24, 14 -22, 14 -18 L 14 -14 C 14 -18, 18 -20, 22 -20 C 26 -20, 28 -18, 28 -14 L 28 4 C 28 14, 18 22, 6 22 L -2 22 C -6 22, -10 18, -10 12 Z"
+              />
+              <!-- Motion ripple arcs -->
+              <path class="wave-arc a1" d="M 32 -18 C 36 -12, 36 -2, 32 4" />
+              <path class="wave-arc a2" d="M 38 -24 C 44 -14, 44 4, 38 12" />
+            </g>
+          }
+        </svg>
+      </div>
+
+      <!-- Quick Control Bar / Expression Selector Trigger -->
+      <!-- <div class="control-bar" (click)="$event.stopPropagation()">
+        <button
+          class="pill-btn"
+          [class.active]="drawerOpen"
+          (click)="toggleDrawer()"
+          title="Toggle Expressions Palette"
+        >
+          <span class="bot-status-dot" [class.auto-on]="isAutoMode"></span>
+          <span class="pill-label">{{ currentDisplayLabel }}</span>
+          <span class="pill-arrow">{{ drawerOpen ? '▴' : '▾' }}</span>
+        </button>
+
+        <button
+          class="pill-btn auto-toggle-btn"
+          [class.active]="isAutoMode"
+          (click)="toggleAutoMode()"
+          title="Toggle Organic Mood Drift"
+        >
+          {{ isAutoMode ? 'Auto: ON' : 'Auto: OFF' }}
+        </button>
+
+        <button
+          class="pill-btn icon-only-btn"
+          (click)="cycleNextExpression()"
+          title="Next Expression"
+        >
+          ▶
+        </button>
+      </div> -->
+
+      <!-- Expandable Expression Drawer (Categorized) -->
+      @if (drawerOpen) {
+        <div class="expression-drawer" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
+            <span class="drawer-title">Companion Bot Expressions ({{ allStates.length }})</span>
+            <button class="drawer-close-btn" (click)="toggleDrawer()">✕</button>
+          </div>
+
+          <div class="drawer-categories">
+            @for (cat of categories; track cat.name) {
+              <div class="category-block">
+                <div class="category-header">{{ cat.name }}</div>
+                <div class="category-chips">
+                  @for (item of cat.expressions; track item.id) {
+                    <button
+                      class="expr-chip"
+                      [class.is-selected]="currentState === item.id"
+                      (click)="selectExpression(item.id)"
+                    >
+                      <span class="chip-icon">{{ item.icon }}</span>
+                      <span class="chip-label">{{ item.label }}</span>
+                    </button>
+                  }
+                </div>
               </div>
             }
-
-            <!-- Surprised shock lines -->
-            @if (currentState === 'surprised') {
-              <div class="shock-lines">
-                <div class="shock shock-1"></div>
-                <div class="shock shock-2"></div>
-                <div class="shock shock-3"></div>
-                <div class="shock shock-4"></div>
-              </div>
-            }
-
-            <!-- Nervous / frustrated sweat flickers -->
-            @if (currentState === 'nervous' || currentState === 'frustrated') {
-              <div class="nervous-marks">
-                <span>•</span><span>•</span><span>•</span>
-              </div>
-            }
-
-            <!-- Sad tear -->
-            @if (currentState === 'sad') {
-              <div class="tear">
-                <div class="tear-drop"></div>
-              </div>
-            }
-
-            <!-- Expression transition shimmer -->
-            <div class="transition-shimmer" [class.active]="isTransitioning"></div>
-
-            <!-- Screen ambient glow -->
-            <div class="screen-glow" [class.active]="glowActive"></div>
           </div>
         </div>
-      </div>
-
-      <!--
-      <div class="label">{{ currentState }}</div>
-      <div class="controls">
-        @for (state of allStates; track state) {
-          <button
-            [class.active]="currentState === state"
-            (click)="setState(state)"
-          >
-            {{ state }}
-          </button>
-        }
-        <button
-          class="random-btn"
-          (click)="toggleRandomizer()"
-          [class.active]="isRandomizing"
-        >
-          {{ isRandomizing ? 'stop' : 'random' }}
-        </button>
-      </div>
-      -->
+      }
     </div>
   `,
   styles: [`
     :host {
-      --bg: #0d0d0f;
-      --shell-1: #f4f1ea;
-      --shell-2: #d9d4c8;
-      --screen: #0a0d12;
-      --glow: #35e6e0;
-      --glow-dim: #1a8a85;
-      --ink-dim: #8b8f97;
-      --ink: #eee;
-      --ease: cubic-bezier(.4,0,.2,1);
+      --bg: #000000;
+      --screen-bg: #06080e;
+      --glow: #3bf1ff;
+      --glow-dim: #1398a6;
+      --glow-bloom: rgba(59, 241, 255, 0.75);
+      --ink: #ffffff;
+      --ease: cubic-bezier(.34, 1.56, .64, 1);
       display: block;
       width: 100%;
       height: 100%;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .stage {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 26px;
-      padding: 40px 20px;
-      min-height: 100%;
-      background: radial-gradient(circle at 50% 30%, #1a1b1f, var(--bg) 70%);
       justify-content: center;
-    }
-
-    /* ===== DEVICE ===== */
-    .device {
-      width: 220px;
-      height: 210px;
-      background: linear-gradient(160deg, var(--shell-1), var(--shell-2));
-      border-radius: 48% 48% 42% 42% / 58% 58% 34% 34%;
-      padding: 16px;
-      box-shadow:
-        0 22px 44px -16px rgba(0,0,0,.55),
-        inset 0 2px 3px rgba(255,255,255,.6);
-      animation: deviceFloat 4s ease-in-out infinite;
-    }
-
-    @keyframes deviceFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .screen {
       width: 100%;
       height: 100%;
-      background: var(--screen);
-      border-radius: 48% 48% 42% 42% / 58% 58% 34% 34%;
+      background: radial-gradient(circle at 50% 40%, #0d111a 0%, var(--bg) 85%);
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    /* ===== ROBOT MONITOR FRAME ===== */
+    .robot-screen-frame {
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 16 / 10;
+      max-height: calc(100vh - 74px);
+      background: var(--screen-bg);
+      border-radius: 28px;
+      border: 3px solid #1c2230;
+      box-shadow:
+        0 14px 40px -10px rgba(0, 0, 0, 0.85),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1),
+        0 0 30px rgba(59, 241, 255, 0.08);
       position: relative;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.25s ease;
     }
 
-    .face {
-      --intensity: .5;
-      --attention: .5;
-      --energy: .5;
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform-origin: 50% 52%;
+    .robot-screen-frame:active {
+      transform: scale(0.985);
     }
 
-    /* Expression changes should feel like a physical reaction,
-       not a CSS state swap. */
-    .face.is-transitioning {
-      animation-duration: .38s;
-      animation-timing-function: var(--ease);
-      animation-fill-mode: both;
-    }
-
-    .face.is-transitioning[data-transition="soft"] {
-      animation-name: transitionSoft;
-    }
-
-    .face.is-transitioning[data-transition="snap"] {
-      animation-name: transitionSnap;
-    }
-
-    .face.is-transitioning[data-transition="melt"] {
-      animation-name: transitionMelt;
-    }
-
-    .face.is-transitioning[data-transition="blink"] {
-      animation-name: transitionBlink;
-    }
-
-    @keyframes transitionSoft {
-      0% { opacity: .78; transform: scale(.975) translateY(1px); filter: blur(.2px); }
-      45% { opacity: 1; transform: scale(1.015) translateY(-1px); }
-      100% { opacity: 1; transform: scale(1); filter: blur(0); }
-    }
-
-    @keyframes transitionSnap {
-      0% { transform: scale(.96); opacity: .65; }
-      35% { transform: scale(1.035); opacity: 1; }
-      62% { transform: scale(.99); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes transitionMelt {
-      0% { transform: scaleY(.94) scaleX(1.02); opacity: .72; }
-      45% { transform: scaleY(1.025) scaleX(.99); opacity: 1; }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes transitionBlink {
-      0% { transform: scaleY(1); opacity: .7; }
-      28% { transform: scaleY(.88); opacity: 1; }
-      58% { transform: scaleY(1.02); }
-      100% { transform: scaleY(1); }
-    }
-
-    /* ===== EYES ===== */
-    .eyes {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      position: relative;
-      z-index: 5;
-      transition:
-        opacity .32s var(--ease),
-        transform .32s var(--ease),
-        filter .32s var(--ease);
-    }
-
-    .eye {
-      position: relative;
-      width: 30px;
-      height: 66px;
-      background: var(--glow);
-      border-radius: 50%;
-      box-shadow: 0 0 16px var(--glow), 0 0 32px var(--glow);
-      transition:
-        width .38s var(--ease),
-        height .38s var(--ease),
-        border-radius .38s var(--ease),
-        opacity .38s var(--ease),
-        transform .38s var(--ease),
-        box-shadow .38s var(--ease),
-        clip-path .38s var(--ease);
-      overflow: hidden;
-      transform-origin: center;
-    }
-
-    .eye .pupil {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 12px;
-      height: 12px;
-      background: var(--screen);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: all .3s var(--ease);
-      opacity: 0;
-    }
-
-    .eye .highlight {
-      position: absolute;
-      top: 10px;
-      left: 7px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #fff;
-      opacity: .9;
-      transition: opacity .25s var(--ease);
-    }
-
-    /* ===== NATURAL MICRO BEHAVIORS ===== */
-    .face.micro-blink .eye {
-      animation: microBlink .18s ease-in-out both;
-    }
-
-    .face.micro-double-blink .eye {
-      animation: microDoubleBlink .52s ease-in-out both;
-    }
-
-    .face.micro-slow-blink .eye {
-      animation: microSlowBlink .75s ease-in-out both;
-    }
-
-    .face.micro-look-left .eyes {
-      animation: lookLeft .48s cubic-bezier(.2,.8,.2,1) both;
-    }
-
-    .face.micro-look-right .eyes {
-      animation: lookRight .48s cubic-bezier(.2,.8,.2,1) both;
-    }
-
-    .face.micro-look-around .eyes {
-      animation: lookAround .85s ease-in-out both;
-    }
-
-    .face.micro-tiny-smile .mouth-shape {
-      animation: tinySmile .65s ease-out both;
-    }
-
-    .face.micro-smile-fade .mouth-shape {
-      animation: smileFade .7s ease-out both;
-    }
-
-    .face.micro-eye-pulse .eye {
-      animation: eyePulse .6s ease-out both;
-    }
-
-    .face.micro-startle .eyes {
-      animation: microStartle .32s cubic-bezier(.2,.9,.3,1) both;
-    }
-
-    .face.micro-settle {
-      animation: settle .7s cubic-bezier(.2,.8,.2,1) both;
-    }
-
-    .face.micro-doze .eyes {
-      animation: doze .9s ease-in-out both;
-    }
-
-    @keyframes microBlink {
-      0%, 100% { transform: scaleY(1); }
-      45%, 60% { transform: scaleY(.07); }
-    }
-
-    @keyframes microDoubleBlink {
-      0%, 22%, 42%, 100% { transform: scaleY(1); }
-      12%, 31% { transform: scaleY(.06); }
-    }
-
-    @keyframes microSlowBlink {
-      0%, 100% { transform: scaleY(1); }
-      42% { transform: scaleY(.05); }
-      70% { transform: scaleY(.22); }
-    }
-
-    @keyframes lookLeft {
-      0% { transform: translateX(0); }
-      35% { transform: translateX(-4px); }
-      70% { transform: translateX(-3px); }
-      100% { transform: translateX(0); }
-    }
-
-    @keyframes lookRight {
-      0% { transform: translateX(0); }
-      35% { transform: translateX(4px); }
-      70% { transform: translateX(3px); }
-      100% { transform: translateX(0); }
-    }
-
-    @keyframes lookAround {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      55% { transform: translateX(4px); }
-      78% { transform: translateX(2px); }
-      100% { transform: translateX(0); }
-    }
-
-    @keyframes tinySmile {
-      0% { transform: scaleX(.72) scaleY(.75); opacity: .65; }
-      45% { transform: scaleX(1.08) scaleY(1.08); opacity: 1; }
-      100% { transform: scaleX(.94) scaleY(.92); }
-    }
-
-    @keyframes smileFade {
-      0% { transform: scale(1.04); opacity: 1; }
-      100% { transform: scale(.78); opacity: .45; }
-    }
-
-    @keyframes eyePulse {
-      0% { filter: brightness(1); }
-      40% { filter: brightness(1.35); }
-      100% { filter: brightness(1); }
-    }
-
-    @keyframes microStartle {
-      0% { transform: scale(1); }
-      25% { transform: scale(1.14); }
-      55% { transform: scale(.98); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes settle {
-      0% { transform: translateY(-2px) scale(1.01); }
-      45% { transform: translateY(1px) scale(.995); }
-      100% { transform: translateY(0) scale(1); }
-    }
-
-    @keyframes doze {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(3px) scaleY(.92); }
-      100% { transform: translateY(0); }
-    }
-
-    /* ===== EXPRESSIONS ===== */
-
-    /* Neutral: intentionally quiet. No infinite pulse. */
-    .face[data-state="neutral"] .eye {
+    /* Themes */
+    .robot-screen-frame.theme-angry {
+      --glow: #ff2d4a;
+      --glow-dim: #b3142c;
+      --glow-bloom: rgba(255, 45, 74, 0.8);
+      border-color: #38161e;
       box-shadow:
-        0 0 13px var(--glow),
-        0 0 26px rgba(53, 230, 224, .55);
+        0 14px 40px -10px rgba(0, 0, 0, 0.85),
+        inset 0 1px 2px rgba(255, 100, 120, 0.2),
+        0 0 35px rgba(255, 45, 74, 0.22);
     }
 
-    /* Happy */
-    .face[data-state="happy"] .eye,
-    .face[data-state="laughing"] .eye {
-      height: 30px;
-      width: 34px;
-      clip-path: polygon(0% 100%, 20% 20%, 50% 0%, 80% 20%, 100% 100%);
-      border-radius: 0;
-    }
-
-    .face[data-state="happy"] .eye {
-      transform: translateY(calc(-2px * var(--intensity)));
-    }
-
-    .face[data-state="happy"] .eye .highlight,
-    .face[data-state="laughing"] .eye .highlight {
-      opacity: 0;
-    }
-
-    /* Sleepy */
-    .face[data-state="sleepy"] .eye {
-      height: 6px;
-      width: 32px;
-      border-radius: 4px;
-      opacity: calc(.35 + .35 * var(--intensity));
-      box-shadow: 0 0 9px var(--glow-dim);
-    }
-
-    .face[data-state="sleepy"] .eye .highlight,
-    .face[data-state="relaxed"] .eye .highlight {
-      opacity: 0;
-    }
-
-    /* Surprised */
-    .face[data-state="surprised"] .eye {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
+    .robot-screen-frame.theme-love {
+      --glow: #ff4785;
+      --glow-dim: #b31b48;
+      --glow-bloom: rgba(255, 71, 133, 0.85);
+      border-color: #381926;
       box-shadow:
-        0 0 18px var(--glow),
-        0 0 42px rgba(53, 230, 224, .55);
+        0 14px 40px -10px rgba(0, 0, 0, 0.85),
+        inset 0 1px 2px rgba(255, 120, 160, 0.2),
+        0 0 35px rgba(255, 71, 133, 0.22);
     }
 
-    .face[data-state="surprised"] .eye .pupil {
-      opacity: 1;
-      width: 16px;
-      height: 16px;
+    .robot-screen-frame.theme-blush {
+      box-shadow:
+        0 14px 40px -10px rgba(0, 0, 0, 0.85),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1),
+        0 0 35px rgba(255, 79, 139, 0.16);
     }
 
-    /* Sad */
-    .face[data-state="sad"] .eye {
-      opacity: .62;
-      transform-origin: bottom center;
-      box-shadow: 0 0 10px var(--glow-dim);
-    }
-
-    .face[data-state="sad"] .eye:first-child {
-      transform: rotate(-10deg);
-      border-radius: 50% 50% 50% 20%;
-    }
-
-    .face[data-state="sad"] .eye:last-child {
-      transform: rotate(10deg);
-      border-radius: 50% 50% 20% 50%;
-    }
-
-    .face[data-state="sad"] .eye .highlight {
-      opacity: .35;
-    }
-
-    /* Angry */
-    .face[data-state="angry"] .eyes {
-      opacity: 0;
-      transform: scale(.8);
-    }
-
-    /* Nervous — new screenshot: squeezed eyes + clenched little mouth + sweat */
-    .face[data-state="nervous"] .eye {
-      width: 34px;
-      height: 16px;
-      border-radius: 45% 45% 20% 20%;
-      transform: rotate(var(--nervous-tilt, 0deg)) scaleY(.82);
-      box-shadow: 0 0 12px var(--glow);
-    }
-
-    .face[data-state="nervous"] .eye:first-child {
-      transform: rotate(10deg) scaleY(.82);
-    }
-
-    .face[data-state="nervous"] .eye:last-child {
-      transform: rotate(-10deg) scaleY(.82);
-    }
-
-    .face[data-state="nervous"] .eye .highlight {
-      opacity: 0;
-    }
-
-    /* Relaxed — new closed/half-moon eyes */
-    .face[data-state="relaxed"] .eye {
-      width: 34px;
-      height: 17px;
-      border-radius: 50% 50% 12px 12px;
-      clip-path: inset(0 0 42% 0 round 50%);
-      opacity: .85;
-      box-shadow: 0 0 11px var(--glow);
-    }
-
-    .face[data-state="relaxed"] .eye:first-child {
-      transform: rotate(3deg);
-    }
-
-    .face[data-state="relaxed"] .eye:last-child {
-      transform: rotate(-3deg);
-    }
-
-    /* Laughing — new screenshot: tightly squeezed eyes + big open/teeth mouth */
-    .face[data-state="laughing"] .eye {
-      height: 18px;
-      width: 38px;
-      clip-path: polygon(0 85%, 18% 20%, 50% 0, 82% 20%, 100% 85%, 78% 62%, 50% 82%, 22% 62%);
-      box-shadow: 0 0 18px var(--glow);
-    }
-
-    /* Frustrated — new screenshot: narrowed eyes + clenched teeth + sweat */
-    .face[data-state="frustrated"] .eyes {
-      transform: translateY(2px);
-    }
-
-    .face[data-state="frustrated"] .eye {
-      width: 38px;
-      height: 18px;
-      border-radius: 4px;
-      transform: rotate(9deg) skewX(-12deg);
-      box-shadow: 0 0 14px var(--glow);
-    }
-
-    .face[data-state="frustrated"] .eye:last-child {
-      transform: rotate(-9deg) skewX(12deg);
-    }
-
-    .face[data-state="frustrated"] .eye .highlight {
-      opacity: 0;
-    }
-
-    /* ===== GLYPH ===== */
-    .glyph {
+    /* Ambient Bloom inside Screen */
+    .ambient-glow {
       position: absolute;
       inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity .28s var(--ease), transform .28s var(--ease);
-      z-index: 10;
       pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, var(--glow-bloom) 0%, transparent 68%);
+      opacity: 0.14;
+      transition: opacity 0.4s ease, background 0.4s ease;
+      z-index: 1;
     }
 
-    .glyph.visible {
-      opacity: 1;
+    /* Sensor Dot on top Bezel */
+    .bezel-sensor {
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #11151e;
+      border: 1px solid #232a3b;
+      z-index: 5;
     }
 
-    .face[data-state="frustrated"] .glyph {
-      opacity: .25;
-      transform: scale(.78);
+    /* Glass Glare Highlight */
+    .glass-glare {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 42%);
+      border-radius: inherit;
+      z-index: 4;
     }
 
-    .glyph svg {
-      filter: drop-shadow(0 0 6px var(--glow));
+    /* ===== SVG ROBOT FACE ===== */
+    .face-svg {
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      color: var(--glow);
+      filter: drop-shadow(0 0 8px var(--glow)) drop-shadow(0 0 22px var(--glow-bloom));
+      transition: filter 0.35s ease, color 0.35s ease, transform 0.25s ease;
     }
 
-    .glyph path {
+    /* Eye & Mouth Base Styling */
+    .eye-fill {
+      fill: currentColor;
+    }
+
+    .eye-stroke {
       fill: none;
-      stroke: var(--glow);
-      stroke-width: 7;
+      stroke: currentColor;
+      stroke-width: 15;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
-    /* ===== MOUTH ===== */
-    .mouth {
-      position: absolute;
-      bottom: 28%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity .28s var(--ease), transform .28s var(--ease);
-      z-index: 6;
+    .eye-crease {
+      stroke: currentColor;
+      stroke-width: 7;
+      stroke-linecap: round;
     }
 
-    .mouth.visible {
-      opacity: 1;
+    .wink-stroke {
+      stroke-width: 13;
     }
 
-    .mouth-shape {
-      width: 24px;
-      height: 8px;
-      background: var(--glow);
-      border-radius: 4px;
-      box-shadow: 0 0 8px var(--glow);
-      transition:
-        width .35s var(--ease),
-        height .35s var(--ease),
-        border-radius .35s var(--ease),
-        background .35s var(--ease),
-        box-shadow .35s var(--ease),
-        transform .35s var(--ease);
+    .eye-pupil {
+      fill: var(--screen-bg);
+      opacity: 0.45;
     }
 
-    .mouth-shape[data-mouth="happy"] {
-      width: calc(26px + 8px * var(--intensity));
-      height: calc(11px + 5px * var(--intensity));
-      border-radius: 0 0 14px 14px;
+    .eye-shine, .star-center-shine {
+      fill: #ffffff;
+      opacity: 0.95;
     }
 
-    .mouth-shape[data-mouth="sad"] {
-      width: 20px;
-      height: 10px;
-      border-radius: 10px 10px 0 0;
-      background: var(--glow-dim);
-      box-shadow: 0 0 6px var(--glow-dim);
-    }
+    .eye-shine-large { fill: #ffffff; opacity: 0.95; }
+    .eye-shine-med { fill: #ffffff; opacity: 0.85; }
+    .eye-shine-small { fill: #ffffff; opacity: 0.7; }
 
-    .mouth-shape[data-mouth="surprised"] {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--screen);
-      border: 3px solid var(--glow);
-      box-shadow: 0 0 12px var(--glow), inset 0 0 8px var(--glow);
-    }
-
-    /* New: nervous tiny clenched mouth */
-    .mouth-shape[data-mouth="nervous"] {
-      width: 28px;
-      height: 7px;
-      border-radius: 2px;
-      background:
-        repeating-linear-gradient(
-          90deg,
-          var(--glow) 0 4px,
-          var(--screen) 4px 5px
-        );
-      box-shadow: 0 0 9px var(--glow);
-    }
-
-    /* New: relaxed small smile */
-    .mouth-shape[data-mouth="relaxed"] {
-      width: 22px;
-      height: 7px;
-      border-radius: 0 0 12px 12px;
-      opacity: .65;
-    }
-
-    /* New: laughing open mouth with teeth */
-    .mouth-shape[data-mouth="laughing"] {
-      width: 42px;
-      height: 25px;
-      border-radius: 5px 5px 12px 12px;
-      background:
-        linear-gradient(
-          to bottom,
-          var(--glow) 0 38%,
-          var(--screen) 38% 72%,
-          var(--glow) 72% 100%
-        );
-      border: 2px solid var(--glow);
-      box-shadow: 0 0 15px var(--glow);
-    }
-
-    /* New: frustrated gritted teeth */
-    .mouth-shape[data-mouth="frustrated"] {
-      width: 42px;
-      height: 18px;
-      border-radius: 3px;
-      background:
-        repeating-linear-gradient(
-          90deg,
-          var(--glow) 0 7px,
-          var(--screen) 7px 9px
-        );
-      border: 2px solid var(--glow);
-      box-shadow: 0 0 13px var(--glow);
-    }
-
-    /* ===== CHEEKS ===== */
-    .cheeks {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .3s var(--ease);
-      z-index: 4;
-    }
-
-    .cheeks.visible {
-      opacity: calc(.25 + .5 * var(--intensity));
-    }
-
-    .cheek {
-      position: absolute;
-      width: 20px;
-      height: 12px;
-      background: rgba(255, 100, 150, .3);
-      border-radius: 50%;
+    /* Cheeks */
+    .cheek-blush {
       filter: blur(4px);
-      top: 55%;
     }
 
-    .cheek.left { left: 18%; }
-    .cheek.right { right: 18%; }
-
-    /* ===== SWEAT ===== */
-    .sweat {
-      position: absolute;
-      inset: 0;
-      z-index: 14;
-      pointer-events: none;
+    /* Eyebrows */
+    .eyebrow {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 6;
+      stroke-linecap: round;
     }
 
-    .sweat-drop {
-      position: absolute;
-      width: 6px;
-      height: 11px;
-      background: var(--glow);
-      border-radius: 60% 40% 65% 45%;
-      box-shadow: 0 0 8px var(--glow);
-      opacity: 0;
-      animation: nervousSweat 1.6s ease-out both;
+    /* Mouth */
+    .mouth-shape {
+      fill: currentColor;
     }
 
-    .sweat-left {
-      left: 26%;
-      top: 30%;
-      transform: rotate(20deg);
+    .mouth-stroke {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .sweat-right {
-      right: 25%;
-      top: 25%;
-      transform: rotate(-20deg);
-      animation-delay: .42s;
+    /* Floating Accents */
+    .accent-glow {
+      color: currentColor;
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      font-weight: 900;
+      font-size: 32px;
+      text-anchor: middle;
     }
 
-    @keyframes nervousSweat {
-      0% { opacity: 0; transform: translateY(-4px) scale(.55) rotate(20deg); }
-      25% { opacity: .9; }
-      75% { opacity: .55; }
-      100% { opacity: 0; transform: translateY(22px) scale(.8) rotate(20deg); }
+    .accent-bob {
+      animation: floatBob 1.6s ease-in-out infinite alternate;
     }
 
-    /* ===== SLEEP ===== */
-    .sleep-particles {
-      position: absolute;
-      top: 20%;
-      right: 15%;
-      z-index: 15;
-      pointer-events: none;
+    @keyframes floatBob {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-7px); }
     }
 
-    .sleep-z {
-      position: absolute;
-      color: var(--glow);
+    /* Angry Vein */
+    .anger-vein {
+      animation: pulseVein 0.9s ease-in-out infinite;
+    }
+
+    .anger-vein path {
+      fill: none;
+      stroke: #ff2d4a;
+      stroke-width: 4.5;
+      stroke-linecap: round;
+    }
+
+    @keyframes pulseVein {
+      0%, 100% { transform: translate(272px, 40px) scale(0.9); }
+      50% { transform: translate(272px, 40px) scale(1.18); }
+    }
+
+    /* Heart Pulse */
+    .heart-pulse {
+      animation: beatHeart 1.4s ease-in-out infinite;
+    }
+
+    @keyframes beatHeart {
+      0%, 100% { transform: scale(1); }
+      35% { transform: scale(1.08); }
+      50% { transform: scale(0.96); }
+      65% { transform: scale(1.05); }
+    }
+
+    /* Sleep Zzz */
+    .sleep-zzz-group text {
+      fill: currentColor;
       font-family: 'Courier New', monospace;
-      font-size: 14px;
       font-weight: bold;
       opacity: 0;
-      text-shadow: 0 0 8px var(--glow);
-      animation: sleepFloat 3s ease-out var(--delay) infinite;
+      animation: floatZ 2.4s ease-out infinite;
     }
 
-    @keyframes sleepFloat {
-      0% { opacity: 0; transform: translate(0,0) scale(.5) rotate(0deg); }
-      20% { opacity: .8; }
-      100% {
-        opacity: 0;
-        transform: translate(var(--x),var(--y)) scale(1.3) rotate(15deg);
-      }
+    .sleep-zzz-group .z1 { font-size: 20px; animation-delay: 0s; }
+    .sleep-zzz-group .z2 { font-size: 16px; animation-delay: 0.7s; }
+    .sleep-zzz-group .z3 { font-size: 12px; animation-delay: 1.4s; }
+
+    @keyframes floatZ {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+      30% { opacity: 0.9; }
+      100% { opacity: 0; transform: translate(18px, -42px) scale(1.2); }
     }
 
-    /* ===== SPARKLES ===== */
-    .sparkles {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 3;
+    /* Crying Streams & Drops */
+    .tear-stream {
+      fill: none;
+      stroke: #52e5ff;
+      stroke-width: 4;
+      stroke-dasharray: 8 6;
+      animation: streamTears 1.2s linear infinite;
     }
 
-    .sparkle {
-      position: absolute;
-      left: var(--sx);
-      top: var(--sy);
-      width: 4px;
-      height: 4px;
-      background: var(--glow);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--glow), 0 0 16px var(--glow);
-      opacity: 0;
-      animation: sparklePop 1.5s ease-out var(--delay) infinite;
-    }
-
-    @keyframes sparklePop {
-      0% { opacity: 0; transform: scale(0) rotate(0deg); }
-      30% { opacity: 1; transform: scale(1.5) rotate(45deg); }
-      60% { opacity: .5; transform: scale(1) rotate(90deg); }
-      100% { opacity: 0; transform: scale(0) rotate(180deg); }
-    }
-
-    /* ===== SHOCK ===== */
-    .shock-lines {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .shock {
-      position: absolute;
-      width: 2px;
-      height: 16px;
-      background: var(--glow);
-      border-radius: 1px;
-      box-shadow: 0 0 6px var(--glow);
-      opacity: 0;
-      animation: shockFlash .6s ease-out both;
-    }
-
-    .shock-1 { top: 15%; left: 20%; transform: rotate(-30deg); }
-    .shock-2 { top: 12%; right: 22%; transform: rotate(30deg); animation-delay: .12s; }
-    .shock-3 { bottom: 25%; left: 18%; transform: rotate(20deg); animation-delay: .24s; }
-    .shock-4 { bottom: 22%; right: 20%; transform: rotate(-20deg); animation-delay: .36s; }
-
-    @keyframes shockFlash {
-      0% { opacity: 0; transform: scale(.5); }
-      50% { opacity: .8; transform: scale(1.2); }
-      100% { opacity: 0; transform: scale(.9); }
-    }
-
-    /* ===== NERVOUS MARKS ===== */
-    .nervous-marks {
-      position: absolute;
-      inset: 0;
-      z-index: 13;
-      pointer-events: none;
-      color: var(--glow);
-      text-shadow: 0 0 6px var(--glow);
-      font-size: 9px;
-      font-weight: bold;
-    }
-
-    .nervous-marks span {
-      position: absolute;
-      opacity: 0;
-      animation: nervousMarks 1.3s ease-out both;
-    }
-
-    .nervous-marks span:nth-child(1) { left: 21%; top: 38%; }
-    .nervous-marks span:nth-child(2) { right: 21%; top: 34%; animation-delay: .25s; }
-    .nervous-marks span:nth-child(3) { right: 15%; top: 50%; animation-delay: .5s; }
-
-    @keyframes nervousMarks {
-      0%, 100% { opacity: 0; transform: translateY(3px) scale(.6); }
-      35% { opacity: .8; transform: translateY(0) scale(1); }
-      70% { opacity: .35; }
-    }
-
-    /* ===== TEAR ===== */
-    .tear {
-      position: absolute;
-      top: 45%;
-      right: 28%;
-      z-index: 12;
-      pointer-events: none;
+    @keyframes streamTears {
+      0% { stroke-dashoffset: 28; }
+      100% { stroke-dashoffset: 0; }
     }
 
     .tear-drop {
-      width: 6px;
-      height: 10px;
-      background: linear-gradient(to bottom, var(--glow), var(--glow-dim));
-      border-radius: 50%;
-      box-shadow: 0 0 6px var(--glow);
-      opacity: 0;
-      animation: tearFall 2.5s ease-in both;
+      fill: #52e5ff;
+      animation: dripTear 1.6s ease-in infinite;
     }
 
-    @keyframes tearFall {
-      0% { opacity: 0; transform: translateY(0) scale(.5); }
-      15% { opacity: .8; transform: translateY(5px) scale(1); }
-      80% { opacity: .6; }
-      100% { opacity: 0; transform: translateY(50px) scale(.3); }
+    .tear-splash {
+      fill: #52e5ff;
+      opacity: 0.6;
     }
 
-    /* ===== TRANSITION SHIMMER ===== */
-    .transition-shimmer {
-      position: absolute;
-      inset: 8%;
-      border-radius: 45%;
-      pointer-events: none;
-      z-index: 20;
-      opacity: 0;
-      background: radial-gradient(circle, rgba(53,230,224,.12), transparent 62%);
-      mix-blend-mode: screen;
+    @keyframes dripTear {
+      0% { opacity: 0; transform: translateY(-6px) scale(0.6); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(16px) scale(1); }
     }
 
-    .transition-shimmer.active {
-      animation: shimmer .42s ease-out both;
+    /* Joy Tears */
+    .joy-tear-drop {
+      fill: currentColor;
+      animation: pulseJoy 1.2s ease-in-out infinite alternate;
     }
 
-    @keyframes shimmer {
-      0% { opacity: 0; transform: scale(.72); }
-      35% { opacity: .7; transform: scale(1.04); }
-      100% { opacity: 0; transform: scale(1.12); }
+    @keyframes pulseJoy {
+      0% { transform: scale(0.8); }
+      100% { transform: scale(1.15); }
     }
 
-    /* ===== SCREEN GLOW ===== */
-    .screen-glow {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(
-        circle at 50% 50%,
-        rgba(53,230,224,.05) 0%,
-        transparent 70%
-      );
-      opacity: 0;
-      transition: opacity .45s var(--ease);
-      pointer-events: none;
-      z-index: 1;
+    /* Sweat Drop */
+    .sweat-drop-shape {
+      fill: #4fe2ff;
+      animation: dripSweat 1.8s ease-out infinite;
     }
 
-    .screen-glow.active {
-      opacity: calc(.22 + .35 * var(--intensity));
+    @keyframes dripSweat {
+      0% { opacity: 0; transform: translateY(-4px) scale(0.7); }
+      35% { opacity: 0.95; }
+      100% { opacity: 0; transform: translateY(24px) scale(1.05); }
     }
 
-    /* ===== CONTROLS ===== */
-    .label {
-      color: var(--ink-dim);
+    /* Confetti */
+    .confetti {
+      animation: flutterConfetti 2s ease-out infinite;
+    }
+
+    .confetti.c1 { fill: #ff4081; animation-delay: 0.1s; }
+    .confetti.c2 { fill: #ffd600; animation-delay: 0.4s; }
+    .confetti.c3 { fill: #00e5ff; animation-delay: 0.2s; }
+    .confetti.c4 { fill: #7c4dff; animation-delay: 0.6s; }
+    .confetti.c5 { fill: #00e676; animation-delay: 0.3s; }
+    .confetti.c6 { fill: #ff6d00; animation-delay: 0.5s; }
+    .confetti.c7 { fill: #ff4081; animation-delay: 0.8s; }
+    .confetti.c8 { fill: #00e5ff; animation-delay: 0.7s; }
+
+    @keyframes flutterConfetti {
+      0% { opacity: 0; transform: translateY(-12px) rotate(0deg); }
+      20% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(32px) rotate(220deg); }
+    }
+
+    /* Waving Hand */
+    .waving-hand-robot {
+      animation: waveHand 1.1s ease-in-out infinite alternate;
+      transform-origin: 0 16px;
+    }
+
+    .hand-stroke {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 4.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .wave-arc {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      opacity: 0.7;
+    }
+
+    @keyframes waveHand {
+      0% { transform: translate(42px, 114px) rotate(-16deg); }
+      100% { transform: translate(42px, 114px) rotate(24deg); }
+    }
+
+    /* ===== MICRO ANIMATIONS ===== */
+    .face-svg.micro-blink .eyes-layer {
+      animation: microBlink 0.16s ease-in-out both;
+    }
+
+    .face-svg.micro-double-blink .eyes-layer {
+      animation: microDoubleBlink 0.48s ease-in-out both;
+    }
+
+    .face-svg.micro-slow-blink .eyes-layer {
+      animation: microSlowBlink 0.7s ease-in-out both;
+    }
+
+    .face-svg.micro-look-left .eyes-layer {
+      animation: microLookLeft 0.55s var(--ease) both;
+    }
+
+    .face-svg.micro-look-right .eyes-layer {
+      animation: microLookRight 0.55s var(--ease) both;
+    }
+
+    .face-svg.micro-look-around .eyes-layer {
+      animation: microLookAround 0.9s var(--ease) both;
+    }
+
+    .face-svg.micro-eye-pulse {
+      animation: microEyePulse 0.5s ease-out both;
+    }
+
+    .face-svg.micro-settle {
+      animation: microSettle 0.6s var(--ease) both;
+    }
+
+    @keyframes microBlink {
+      0%, 100% { transform: scaleY(1); }
+      45%, 55% { transform: scaleY(0.08); }
+    }
+
+    @keyframes microDoubleBlink {
+      0%, 25%, 45%, 100% { transform: scaleY(1); }
+      12%, 35% { transform: scaleY(0.06); }
+    }
+
+    @keyframes microSlowBlink {
+      0%, 100% { transform: scaleY(1); }
+      40% { transform: scaleY(0.06); }
+      70% { transform: scaleY(0.3); }
+    }
+
+    @keyframes microLookLeft {
+      0%, 100% { transform: translate(0, 0); }
+      30%, 75% { transform: translate(-15px, 0); }
+    }
+
+    @keyframes microLookRight {
+      0%, 100% { transform: translate(0, 0); }
+      30%, 75% { transform: translate(15px, 0); }
+    }
+
+    @keyframes microLookAround {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-12px, -4px); }
+      55% { transform: translate(12px, 4px); }
+      75% { transform: translate(6px, -2px); }
+    }
+
+    @keyframes microEyePulse {
+      0%, 100% { filter: drop-shadow(0 0 8px var(--glow)) drop-shadow(0 0 22px var(--glow-bloom)); }
+      50% { filter: drop-shadow(0 0 14px var(--glow)) drop-shadow(0 0 32px var(--glow-bloom)) brightness(1.2); }
+    }
+
+    @keyframes microSettle {
+      0%, 100% { transform: translateY(0); }
+      40% { transform: translateY(3px) scale(0.99); }
+    }
+
+    /* Transition Animation */
+    .robot-screen-frame.is-transitioning .face-svg {
+      animation: faceMorph 0.32s var(--ease) both;
+    }
+
+    @keyframes faceMorph {
+      0% { opacity: 0.75; transform: scale(0.96); }
+      50% { opacity: 1; transform: scale(1.02); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ===== QUICK CONTROLS BAR ===== */
+    .control-bar {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .pill-btn {
+      background: rgba(22, 27, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      padding: 6px 14px;
+      border-radius: 999px;
       font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 18px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
     }
 
-    .controls {
+    .pill-btn:hover {
+      background: rgba(35, 43, 58, 0.95);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .pill-btn.active {
+      background: var(--glow);
+      color: #060910;
+      border-color: var(--glow);
+      box-shadow: 0 0 14px var(--glow-bloom);
+    }
+
+    .bot-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #718096;
+      transition: background 0.2s ease;
+    }
+
+    .bot-status-dot.auto-on {
+      background: #38ef7d;
+      box-shadow: 0 0 8px #38ef7d;
+    }
+
+    .pill-arrow {
+      font-size: 9px;
+      opacity: 0.7;
+    }
+
+    .icon-only-btn {
+      padding: 6px 11px;
+    }
+
+    /* ===== EXPANDABLE DRAWER ===== */
+    .expression-drawer {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(92vw, 560px);
+      max-height: 52vh;
+      background: rgba(14, 18, 26, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: drawerSlideUp 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    @keyframes drawerSlideUp {
+      0% { opacity: 0; transform: translate(-50%, 15px) scale(0.96); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .drawer-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: none;
+      color: #a0aec0;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .drawer-close-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .drawer-categories {
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .category-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+
+    .category-chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      max-width: 460px;
+      gap: 6px;
     }
 
-    button {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 13px;
-      letter-spacing: .02em;
-      padding: 9px 16px;
-      border-radius: 999px;
-      border: 1px solid #333;
-      background: #17181c;
-      color: var(--ink-dim);
+    .expr-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e0;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 500;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
     }
 
-    button.active {
-      background: var(--ink);
-      color: #111;
-      border-color: var(--ink);
-      font-weight: 600;
+    .expr-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    .expr-chip.is-selected {
+      background: var(--glow);
+      color: #060910;
+      font-weight: 700;
+      border-color: var(--glow);
+      box-shadow: 0 0 10px var(--glow-bloom);
+    }
+
+    .chip-icon {
+      font-size: 13px;
     }
   `]
 })
 export class CompanionRobotComponent implements OnInit, OnDestroy {
   public currentState: RobotExpression = 'neutral';
-  public allStates: RobotExpression[] = [
-    'neutral',
-    'happy',
-    'surprised',
-    'sad',
-    'sleepy',
-    'angry',
-    'nervous',
-    'relaxed',
-    'laughing',
-    'frustrated'
-  ];
-
-  public isRandomizing = false;
-  public glowActive = true;
-
-  public showMouth = false;
-  public mouthShape:
-    | 'happy'
-    | 'sad'
-    | 'surprised'
-    | 'nervous'
-    | 'relaxed'
-    | 'laughing'
-    | 'frustrated'
-    | 'neutral' = 'neutral';
-
-  public showCheeks = false;
-
-  public expressionIntensity = .45;
-
-  // Internal "mood" model. These drift slowly, so randomness stays coherent.
-  public mood = .55;
-  public energy = .62;
-  public attention = .58;
+  public isAutoMode = true;
+  public drawerOpen = false;
 
   public microBehavior: MicroBehavior = 'none';
-  public transitionStyle: TransitionStyle = 'soft';
   public isTransitioning = false;
 
-  public sleepZs: { delay: number; x: number; y: number }[] = [];
-  public sparkles: { x: number; y: number; delay: number }[] = [];
+  // Emotional Model
+  public mood = 0.6; // 0 (sad) -> 1 (joy)
+  public energy = 0.6; // 0 (drowsy) -> 1 (hyper)
+  public attention = 0.6; // 0 (bored) -> 1 (focused/alert)
 
   private randomizerId: ReturnType<typeof setTimeout> | null = null;
   private microBehaviorId: ReturnType<typeof setTimeout> | null = null;
@@ -1116,94 +1235,449 @@ export class CompanionRobotComponent implements OnInit, OnDestroy {
 
   private recentStates: RobotExpression[] = [];
 
-  private readonly expressionRanges: Record<RobotExpression, [number, number]> = {
-    // Neutral is deliberately dominant. Natural characters spend most time here.
-    neutral: [2600, 8500],
-    happy: [1200, 4200],
-    surprised: [450, 1900],
-    sad: [2200, 6000],
-    sleepy: [3200, 9000],
-    angry: [700, 2800],
-    nervous: [900, 3600],
-    relaxed: [2200, 7000],
-    laughing: [800, 2600],
-    frustrated: [800, 3000]
+  // All 35 expressions
+  public readonly allStates: RobotExpression[] = [
+    // Row 1
+    'neutral',
+    'happy',
+    'big-smile',
+    'laughing',
+    'laughing-tears',
+    'excited',
+    'love',
+    // Row 2
+    'blushing',
+    'curious',
+    'confused',
+    'thinking',
+    'surprised',
+    'surprised-open',
+    'shocked',
+    // Row 3
+    'sad',
+    'crying',
+    'worried',
+    'worried-alt',
+    'scared',
+    'angry',
+    'annoyed',
+    // Row 4
+    'embarrassed',
+    'shy',
+    'mischievous',
+    'mischievous-alt',
+    'playful',
+    'bored',
+    'sleepy',
+    // Row 5
+    'sleeping',
+    'proud',
+    'suspicious',
+    'suspicious-alt',
+    'celebrating',
+    'greeting',
+    'lonely'
+  ];
+
+  public readonly categories: ExpressionCategory[] = [
+    {
+      name: 'Happy & Playful',
+      expressions: [
+        { id: 'happy', label: 'Happy', icon: '😊' },
+        { id: 'big-smile', label: 'Big Smile', icon: '😃' },
+        { id: 'laughing', label: 'Laughing', icon: '😆' },
+        { id: 'laughing-tears', label: 'Joy Tears', icon: '😂' },
+        { id: 'excited', label: 'Excited', icon: '🤩' },
+        { id: 'playful', label: 'Playful', icon: '😜' },
+        { id: 'proud', label: 'Proud', icon: '😏' },
+        { id: 'greeting', label: 'Greeting', icon: '👋' },
+        { id: 'celebrating', label: 'Celebrate', icon: '🎉' }
+      ]
+    },
+    {
+      name: 'Loving & Cute',
+      expressions: [
+        { id: 'love', label: 'Love', icon: '😍' },
+        { id: 'blushing', label: 'Blushing', icon: '🥰' },
+        { id: 'shy', label: 'Shy', icon: '🥺' },
+        { id: 'embarrassed', label: 'Embarrassed', icon: '😳' }
+      ]
+    },
+    {
+      name: 'Curious & Thinking',
+      expressions: [
+        { id: 'curious', label: 'Curious', icon: '🧐' },
+        { id: 'confused', label: 'Confused', icon: '🤔' },
+        { id: 'thinking', label: 'Thinking', icon: '💭' },
+        { id: 'mischievous', label: 'Mischief', icon: '😈' },
+        { id: 'mischievous-alt', label: 'Wink Sclk', icon: '😉' }
+      ]
+    },
+    {
+      name: 'Surprised & Intense',
+      expressions: [
+        { id: 'surprised', label: 'Surprised', icon: '😮' },
+        { id: 'surprised-open', label: 'Surprised (O)', icon: '😲' },
+        { id: 'shocked', label: 'Shocked', icon: '😱' },
+        { id: 'scared', label: 'Scared', icon: '😨' }
+      ]
+    },
+    {
+      name: 'Sad & Emotional',
+      expressions: [
+        { id: 'sad', label: 'Sad', icon: '😢' },
+        { id: 'crying', label: 'Crying', icon: '😭' },
+        { id: 'worried', label: 'Worried', icon: '😟' },
+        { id: 'worried-alt', label: 'Worried 2', icon: '😦' },
+        { id: 'lonely', label: 'Lonely', icon: '🥺' }
+      ]
+    },
+    {
+      name: 'Angry & Annoyed',
+      expressions: [
+        { id: 'angry', label: 'Angry', icon: '😡' },
+        { id: 'annoyed', label: 'Annoyed', icon: '😒' },
+        { id: 'suspicious', label: 'Suspicious', icon: '🤨' },
+        { id: 'suspicious-alt', label: 'Narrow Slit', icon: '😑' },
+        { id: 'bored', label: 'Bored', icon: '🥱' }
+      ]
+    },
+    {
+      name: 'Idle & Sleep',
+      expressions: [
+        { id: 'neutral', label: 'Neutral / Idle', icon: '🤖' },
+        { id: 'sleepy', label: 'Sleepy', icon: '😪' },
+        { id: 'sleeping', label: 'Sleeping (Zzz)', icon: '💤' }
+      ]
+    }
+  ];
+
+  // Natural state duration ranges (ms)
+  private readonly expressionDurations: Record<string, [number, number]> = {
+    neutral: [3000, 7500],
+    happy: [1500, 4200],
+    'big-smile': [1400, 3800],
+    laughing: [1200, 3200],
+    'laughing-tears': [1200, 3400],
+    excited: [1000, 2800],
+    love: [2000, 4800],
+    blushing: [1800, 4200],
+    curious: [1500, 3600],
+    confused: [1600, 3800],
+    thinking: [1800, 4200],
+    surprised: [800, 2200],
+    'surprised-open': [800, 2200],
+    shocked: [700, 2000],
+    sad: [2000, 5000],
+    crying: [2200, 5500],
+    worried: [1800, 4500],
+    'worried-alt': [1800, 4500],
+    scared: [900, 2400],
+    angry: [1100, 3000],
+    annoyed: [1800, 4200],
+    embarrassed: [2000, 4600],
+    shy: [2000, 4800],
+    mischievous: [1500, 3800],
+    'mischievous-alt': [1500, 3800],
+    playful: [1400, 3500],
+    bored: [2500, 6000],
+    sleepy: [2800, 7000],
+    sleeping: [3500, 9000],
+    proud: [1800, 4200],
+    suspicious: [1800, 4500],
+    'suspicious-alt': [1800, 4500],
+    celebrating: [1800, 4500],
+    greeting: [2000, 4800],
+    lonely: [2200, 5500]
   };
 
+  public get normalizedState(): RobotExpression {
+    // Map legacy aliases
+    if (this.currentState === 'relaxed') return 'proud';
+    if (this.currentState === 'nervous') return 'worried';
+    if (this.currentState === 'frustrated') return 'annoyed';
+    return this.currentState;
+  }
+
+  public get isBlushState(): boolean {
+    const s = this.normalizedState;
+    return (
+      s === 'big-smile' ||
+      s === 'laughing' ||
+      s === 'laughing-tears' ||
+      s === 'excited' ||
+      s === 'love' ||
+      s === 'blushing' ||
+      s === 'embarrassed' ||
+      s === 'shy'
+    );
+  }
+
+  public get currentDisplayLabel(): string {
+    for (const cat of this.categories) {
+      for (const expr of cat.expressions) {
+        if (expr.id === this.normalizedState) {
+          return expr.label;
+        }
+      }
+    }
+    return this.normalizedState;
+  }
+
   ngOnInit() {
-    this.generateSleepZs();
-    this.generateSparkles();
-    this.updateExpressionFeatures();
     this.startMoodDrift();
     this.startMicroBehaviorLoop();
-    this.toggleRandomizer();
+    this.startAutoMode();
   }
 
   ngOnDestroy() {
-    this.stopRandomizer();
+    this.stopAutoMode();
+    if (this.microBehaviorId) clearTimeout(this.microBehaviorId);
+    if (this.transitionId) clearTimeout(this.transitionId);
+    if (this.moodId) clearTimeout(this.moodId);
+  }
 
-    if (this.microBehaviorId) {
-      clearTimeout(this.microBehaviorId);
-      this.microBehaviorId = null;
-    }
-
-    if (this.transitionId) {
-      clearTimeout(this.transitionId);
-      this.transitionId = null;
-    }
-
-    if (this.moodId) {
-      clearTimeout(this.moodId);
-      this.moodId = null;
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'ArrowRight' || event.key === 'n') {
+      this.cycleNextExpression();
+    } else if (event.key === 'ArrowLeft') {
+      this.cyclePrevExpression();
+    } else if (event.key === ' ' || event.key === 'a') {
+      this.toggleAutoMode();
     }
   }
 
-  setState(state: RobotExpression) {
+  public setState(state: RobotExpression) {
     this.applyExpression(state, true);
   }
 
-  toggleRandomizer() {
-    if (this.isRandomizing) {
-      this.stopRandomizer();
+  public selectExpression(state: RobotExpression) {
+    this.isAutoMode = false;
+    this.stopAutoMode();
+    this.applyExpression(state, true);
+  }
+
+  public toggleAutoMode() {
+    this.isAutoMode = !this.isAutoMode;
+    if (this.isAutoMode) {
+      this.startAutoMode();
     } else {
-      this.isRandomizing = true;
-      this.pickNaturalState(true);
+      this.stopAutoMode();
     }
   }
 
-  stopRandomizer() {
-    this.isRandomizing = false;
+  public toggleDrawer() {
+    this.drawerOpen = !this.drawerOpen;
+  }
 
+  public onStageClick(event: MouseEvent) {
+    if (this.drawerOpen) {
+      this.drawerOpen = false;
+    }
+  }
+
+  public onScreenTap(event: MouseEvent) {
+    event.stopPropagation();
+    // Cute reaction to screen touch!
+    const reactions: RobotExpression[] = [
+      'happy',
+      'big-smile',
+      'blushing',
+      'love',
+      'curious',
+      'playful',
+      'greeting'
+    ];
+    const pick = reactions[Math.floor(Math.random() * reactions.length)];
+    this.applyExpression(pick, false);
+    this.attention = Math.min(1, this.attention + 0.25);
+    this.mood = Math.min(1, this.mood + 0.15);
+  }
+
+  public cycleNextExpression() {
+    const currentIndex = this.allStates.indexOf(this.normalizedState);
+    const nextIndex = (currentIndex + 1) % this.allStates.length;
+    this.selectExpression(this.allStates[nextIndex]);
+  }
+
+  public cyclePrevExpression() {
+    const currentIndex = this.allStates.indexOf(this.normalizedState);
+    const prevIndex = (currentIndex - 1 + this.allStates.length) % this.allStates.length;
+    this.selectExpression(this.allStates[prevIndex]);
+  }
+
+  public getEyeType(side: 'left' | 'right'): string {
+    const s = this.normalizedState;
+
+    switch (s) {
+      case 'neutral':
+        return 'squircle';
+      case 'happy':
+      case 'big-smile':
+      case 'blushing':
+      case 'greeting':
+        return 'happy-arc';
+      case 'laughing':
+      case 'laughing-tears':
+        return 'squeezed';
+      case 'love':
+        return 'heart';
+      case 'excited':
+      case 'celebrating':
+        return 'sparkle-star';
+      case 'curious':
+        return side === 'left' ? 'circle-open' : 'wink';
+      case 'confused':
+        return side === 'left' ? 'circle-open' : 'half-lid';
+      case 'thinking':
+        return 'thinking';
+      case 'surprised':
+      case 'surprised-open':
+        return 'circle-open';
+      case 'shocked':
+        return 'circle-shocked';
+      case 'scared':
+        return 'circle-shocked';
+      case 'sad':
+      case 'crying':
+      case 'worried':
+      case 'worried-alt':
+      case 'lonely':
+        return 'sad-droop';
+      case 'angry':
+        return 'angry-slant';
+      case 'annoyed':
+      case 'bored':
+      case 'suspicious':
+      case 'suspicious-alt':
+        return 'half-lid';
+      case 'proud':
+        return 'half-lid';
+      case 'embarrassed':
+        return 'watery';
+      case 'shy':
+        return 'shy';
+      case 'mischievous':
+        return side === 'left' ? 'circle-open' : 'half-lid';
+      case 'mischievous-alt':
+        return side === 'left' ? 'circle-open' : 'wink';
+      case 'playful':
+        return side === 'left' ? 'sparkle-star' : 'wink';
+      case 'sleepy':
+      case 'sleeping':
+        return 'sleepy-curve';
+      default:
+        return 'squircle';
+    }
+  }
+
+  public getMouthType(): string {
+    const s = this.normalizedState;
+
+    switch (s) {
+      case 'neutral':
+      case 'annoyed':
+      case 'bored':
+      case 'suspicious':
+      case 'suspicious-alt':
+        return 'dash';
+      case 'happy':
+      case 'love':
+      case 'greeting':
+        return 'smile';
+      case 'big-smile':
+      case 'blushing':
+      case 'playful':
+        return 'big-smile';
+      case 'laughing':
+      case 'laughing-tears':
+      case 'excited':
+      case 'celebrating':
+        return 'laughing';
+      case 'curious':
+      case 'surprised':
+        return 'open-o';
+      case 'surprised-open':
+      case 'shocked':
+        return 'shocked-o';
+      case 'sad':
+      case 'worried-alt':
+      case 'lonely':
+        return 'frown';
+      case 'crying':
+        return 'crying-open';
+      case 'confused':
+      case 'scared':
+      case 'worried':
+        return 'squiggle';
+      case 'thinking':
+        return 'dots';
+      case 'mischievous':
+      case 'mischievous-alt':
+      case 'proud':
+        return 'smirk';
+      case 'embarrassed':
+      case 'shy':
+      case 'sleeping':
+      case 'sleepy':
+        return 'tiny-dot';
+      default:
+        return 'dash';
+    }
+  }
+
+  private applyExpression(state: RobotExpression, manual: boolean) {
+    this.currentState = state;
+    this.triggerTransition();
+    this.rememberState(state);
+
+    if (manual) {
+      this.clearMicroBehavior();
+    }
+  }
+
+  private triggerTransition() {
+    this.isTransitioning = false;
+    if (this.transitionId) clearTimeout(this.transitionId);
+
+    requestAnimationFrame(() => {
+      this.isTransitioning = true;
+      this.transitionId = setTimeout(() => {
+        this.isTransitioning = false;
+      }, 340);
+    });
+  }
+
+  private rememberState(state: RobotExpression) {
+    this.recentStates = [state, ...this.recentStates.filter(s => s !== state)].slice(0, 5);
+  }
+
+  /* ===== ORGANIC AMBIENT BEHAVIOR ENGINE ===== */
+  private startAutoMode() {
+    this.pickNaturalState(true);
+  }
+
+  private stopAutoMode() {
     if (this.randomizerId) {
       clearTimeout(this.randomizerId);
       this.randomizerId = null;
     }
   }
 
-  /**
-   * Main behavioral loop.
-   *
-   * Instead of "randomly pick another face", this:
-   * 1. drifts a mood/energy/attention model,
-   * 2. weights expressions using that model,
-   * 3. penalizes recent expressions,
-   * 4. sometimes returns through neutral/relaxed,
-   * 5. varies intensity and duration.
-   */
   private pickNaturalState(firstPick = false) {
-    if (!this.isRandomizing) return;
+    if (!this.isAutoMode) return;
 
     let nextState = this.chooseWeightedExpression();
 
-    // Avoid a constant emotional rollercoaster.
     if (!firstPick && this.shouldReturnToBaseline()) {
-      nextState = this.energy < .3 ? 'sleepy' : 'neutral';
+      nextState = this.energy < 0.3 ? 'sleepy' : 'neutral';
     }
 
     this.applyExpression(nextState, false);
 
-    const [min, max] = this.expressionRanges[nextState];
-    const duration = this.naturalDuration(min, max);
+    const range = this.expressionDurations[nextState] || [2500, 5000];
+    const duration = this.naturalDuration(range[0], range[1]);
 
     this.randomizerId = setTimeout(() => {
       this.pickNaturalState();
@@ -1211,261 +1685,126 @@ export class CompanionRobotComponent implements OnInit, OnDestroy {
   }
 
   private chooseWeightedExpression(): RobotExpression {
-    const candidates = this.allStates.map(state => ({
+    const pool = this.allStates.map(state => ({
       state,
-      weight: this.expressionWeight(state)
+      weight: this.calculateWeight(state)
     }));
 
-    const total = candidates.reduce((sum, item) => sum + item.weight, 0);
+    const total = pool.reduce((sum, item) => sum + item.weight, 0);
     let roll = Math.random() * total;
 
-    for (const candidate of candidates) {
-      roll -= candidate.weight;
-      if (roll <= 0) return candidate.state;
+    for (const item of pool) {
+      roll -= item.weight;
+      if (roll <= 0) return item.state;
     }
 
     return 'neutral';
   }
 
-  private expressionWeight(state: RobotExpression): number {
-    // Base probabilities.
-    let weight: number = {
-      neutral: 42,
-      happy: 14,
-      surprised: 7,
-      sad: 4,
-      sleepy: 8,
-      angry: 3,
-      nervous: 5,
-      relaxed: 9,
-      laughing: 4,
-      frustrated: 4
-    }[state];
+  private calculateWeight(state: RobotExpression): number {
+    let weight = 8;
 
-    // Mood biases.
-    if (state === 'happy') weight += this.mood * 15;
-    if (state === 'laughing') weight += this.mood * this.energy * 13;
-    if (state === 'sad') weight += (1 - this.mood) * 8;
-    if (state === 'angry') weight += (1 - this.mood) * this.energy * 5;
-    if (state === 'frustrated') weight += (1 - this.mood) * this.attention * 5;
-    if (state === 'nervous') weight += this.attention * (1 - this.mood) * 7;
-    if (state === 'surprised') weight += this.attention * 7;
-    if (state === 'relaxed') weight += this.mood * (1 - this.energy) * 12;
-    if (state === 'sleepy') weight += (1 - this.energy) * 18;
+    // Baseline favourites
+    if (state === 'neutral') weight = 36;
+    if (state === 'happy') weight = 16;
+    if (state === 'big-smile') weight = 12;
+    if (state === 'curious') weight = 10;
+    if (state === 'blushing') weight = 9;
+    if (state === 'greeting') weight = 8;
+    if (state === 'proud') weight = 8;
+    if (state === 'thinking') weight = 8;
+    if (state === 'surprised') weight = 7;
+    if (state === 'love') weight = 7;
+    if (state === 'playful') weight = 8;
+    if (state === 'sleepy') weight = 7;
+    if (state === 'sleeping') weight = 6;
 
-    // Recent-memory penalty prevents repetitive loops.
-    const recentIndex = this.recentStates.indexOf(state);
-    if (recentIndex !== -1) {
-      weight *= recentIndex === 0 ? .08 : recentIndex === 1 ? .25 : .55;
+    // Mood influences
+    if (this.mood > 0.6) {
+      if (['happy', 'big-smile', 'laughing', 'laughing-tears', 'excited', 'love', 'celebrating'].includes(state)) {
+        weight += this.mood * 14;
+      }
+    } else {
+      if (['sad', 'worried', 'crying', 'lonely', 'embarrassed'].includes(state)) {
+        weight += (1 - this.mood) * 14;
+      }
     }
 
-    // Harder anti-repeat for the immediately previous expression.
-    if (state === this.currentState) weight *= .02;
+    // Energy influences
+    if (this.energy > 0.7) {
+      if (['excited', 'celebrating', 'laughing', 'playful'].includes(state)) {
+        weight += 12;
+      }
+    } else if (this.energy < 0.35) {
+      if (['sleepy', 'sleeping', 'bored'].includes(state)) {
+        weight += 18;
+      }
+    }
 
-    return Math.max(.05, weight);
+    // Attention influences
+    if (this.attention > 0.7) {
+      if (['curious', 'surprised', 'confused', 'thinking'].includes(state)) {
+        weight += 12;
+      }
+    }
+
+    // Penalty for recent states
+    const recentIndex = this.recentStates.indexOf(state);
+    if (recentIndex !== -1) {
+      weight *= recentIndex === 0 ? 0.05 : recentIndex === 1 ? 0.2 : 0.5;
+    }
+
+    return Math.max(0.2, weight);
   }
 
   private shouldReturnToBaseline(): boolean {
-    // Neutral/relaxed "breathing room" is more likely after a strong expression.
     const strongStates: RobotExpression[] = [
       'surprised',
+      'shocked',
+      'scared',
       'angry',
-      'laughing',
-      'frustrated',
-      'nervous'
+      'crying',
+      'celebrating',
+      'laughing-tears',
+      'excited'
     ];
-
-    if (!strongStates.includes(this.currentState)) {
-      return Math.random() < .28;
+    if (strongStates.includes(this.normalizedState)) {
+      return Math.random() < 0.68;
     }
-
-    return Math.random() < .62;
-  }
-
-  private applyExpression(state: RobotExpression, manual: boolean) {
-    const previous = this.currentState;
-
-    this.currentState = state;
-    this.expressionIntensity = this.randomIntensity(state);
-
-    this.transitionStyle = this.chooseTransition(previous, state);
-
-    this.triggerTransition();
-
-    this.rememberState(state);
-    this.updateExpressionFeatures();
-
-    if (manual) {
-      // Manual selection should still feel alive, but should not fight the user.
-      this.clearMicroBehavior();
-      this.stopRandomizer();
-    }
-  }
-
-  private chooseTransition(
-    from: RobotExpression,
-    to: RobotExpression
-  ): TransitionStyle {
-    if (to === 'surprised' || to === 'frustrated') return 'snap';
-    if (from === 'sleepy' || to === 'sleepy' || to === 'relaxed') return 'melt';
-    if (from === 'neutral' || to === 'neutral') return 'soft';
-    return Math.random() < .5 ? 'soft' : 'blink';
-  }
-
-  private triggerTransition() {
-    this.isTransitioning = false;
-
-    if (this.transitionId) {
-      clearTimeout(this.transitionId);
-    }
-
-    // Let Angular remove the class before re-adding it, so the CSS animation
-    // is retriggered even when the same expression is selected manually.
-    requestAnimationFrame(() => {
-      this.isTransitioning = true;
-
-      this.transitionId = setTimeout(() => {
-        this.isTransitioning = false;
-      }, 430);
-    });
-  }
-
-  private rememberState(state: RobotExpression) {
-    this.recentStates = [
-      state,
-      ...this.recentStates.filter(item => item !== state)
-    ].slice(0, 4);
-  }
-
-  private randomIntensity(state: RobotExpression): number {
-    const baseByState: Record<RobotExpression, number> = {
-      neutral: .25,
-      happy: .55,
-      surprised: .75,
-      sad: .5,
-      sleepy: .35,
-      angry: .75,
-      nervous: .6,
-      relaxed: .35,
-      laughing: .82,
-      frustrated: .78
-    };
-
-    // Beta-like distribution: many subtle expressions, occasional strong ones.
-    const variation = (Math.random() + Math.random() + Math.random()) / 3;
-    const moodInfluence =
-      state === 'happy' || state === 'laughing'
-        ? this.mood * .18
-        : state === 'sad' || state === 'angry'
-          ? (1 - this.mood) * .12
-          : 0;
-
-    return Math.min(
-      1,
-      Math.max(.12, baseByState[state] * .72 + variation * .28 + moodInfluence)
-    );
+    return Math.random() < 0.32;
   }
 
   private naturalDuration(min: number, max: number): number {
-    // Two random values makes durations cluster around the middle instead of
-    // feeling like uniformly generated timers.
     const r = (Math.random() + Math.random()) / 2;
-    const jitter = (Math.random() - .5) * 220;
-    return Math.max(350, min + (max - min) * r + jitter);
+    const jitter = (Math.random() - 0.5) * 180;
+    return Math.max(400, min + (max - min) * r + jitter);
   }
 
-  private updateExpressionFeatures() {
-    this.showMouth = false;
-    this.showCheeks = false;
-    this.glowActive = true;
-
-    switch (this.currentState) {
-      case 'happy':
-        this.showMouth = true;
-        this.mouthShape = 'happy';
-        this.showCheeks = true;
-        break;
-
-      case 'sad':
-        this.showMouth = true;
-        this.mouthShape = 'sad';
-        this.glowActive = false;
-        break;
-
-      case 'surprised':
-        this.showMouth = true;
-        this.mouthShape = 'surprised';
-        break;
-
-      case 'nervous':
-        this.showMouth = true;
-        this.mouthShape = 'nervous';
-        break;
-
-      case 'relaxed':
-        this.showMouth = true;
-        this.mouthShape = 'relaxed';
-        this.glowActive = true;
-        break;
-
-      case 'laughing':
-        this.showMouth = true;
-        this.mouthShape = 'laughing';
-        this.showCheeks = true;
-        break;
-
-      case 'frustrated':
-        this.showMouth = true;
-        this.mouthShape = 'frustrated';
-        break;
-
-      case 'sleepy':
-        this.glowActive = false;
-        break;
-
-      case 'angry':
-        this.glowActive = true;
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  /**
-   * Micro-expression loop.
-   *
-   * These behaviors do NOT change the emotional state.
-   * They make the robot feel like it is continuously alive between
-   * major expression changes.
-   */
   private startMicroBehaviorLoop() {
     const schedule = () => {
-      const delay = this.naturalDuration(850, 3300);
-
+      const delay = this.naturalDuration(1200, 3600);
       this.microBehaviorId = setTimeout(() => {
         this.runRandomMicroBehavior();
         schedule();
       }, delay);
     };
-
     schedule();
   }
 
   private runRandomMicroBehavior() {
+    // Only run micro-behaviors during compatible states
+    const s = this.normalizedState;
+    if (s === 'sleeping' || s === 'crying' || s === 'scared') return;
+
     const choices: { behavior: MicroBehavior; weight: number }[] = [
-      { behavior: 'blink', weight: 28 },
-      { behavior: 'double-blink', weight: 7 },
-      { behavior: 'slow-blink', weight: 8 },
-      { behavior: 'look-left', weight: 13 },
-      { behavior: 'look-right', weight: 13 },
-      { behavior: 'look-around', weight: 5 },
+      { behavior: 'blink', weight: 26 },
+      { behavior: 'double-blink', weight: 8 },
+      { behavior: 'slow-blink', weight: 7 },
+      { behavior: 'look-left', weight: 12 },
+      { behavior: 'look-right', weight: 12 },
+      { behavior: 'look-around', weight: 6 },
       { behavior: 'eye-pulse', weight: 8 },
-      { behavior: 'settle', weight: 8 },
-      { behavior: 'tiny-smile', weight: this.mood > .58 ? 7 : 2 },
-      { behavior: 'smile-fade', weight: this.currentState === 'happy' || this.currentState === 'laughing' ? 7 : 1 },
-      { behavior: 'startle', weight: this.attention > .75 ? 4 : 1 },
-      { behavior: 'doze', weight: this.energy < .35 ? 7 : 1 }
+      { behavior: 'settle', weight: 7 }
     ];
 
     const total = choices.reduce((sum, item) => sum + item.weight, 0);
@@ -1485,33 +1824,24 @@ export class CompanionRobotComponent implements OnInit, OnDestroy {
 
     requestAnimationFrame(() => {
       this.microBehavior = behavior;
-
-      const durations: Partial<Record<MicroBehavior, number>> = {
-        blink: 220,
-        'double-blink': 600,
-        'slow-blink': 850,
-        'look-left': 550,
-        'look-right': 550,
+      const durations: Record<MicroBehavior, number> = {
+        none: 0,
+        blink: 200,
+        'double-blink': 520,
+        'slow-blink': 760,
+        'look-left': 600,
+        'look-right': 600,
         'look-around': 950,
-        'tiny-smile': 700,
-        'smile-fade': 750,
-        'eye-pulse': 650,
-        startle: 400,
-        settle: 750,
-        doze: 950
+        'tiny-smile': 650,
+        'eye-pulse': 550,
+        settle: 650
       };
 
-      if (this.microBehaviorId) {
-        // This timeout is only for the behavior itself; the loop schedules its
-        // next decision independently.
-      }
-
       setTimeout(() => {
-        // Don't erase a newer behavior if one has already started.
         if (this.microBehavior === behavior) {
           this.microBehavior = 'none';
         }
-      }, durations[behavior] ?? 500);
+      }, durations[behavior] || 500);
     });
   }
 
@@ -1519,47 +1849,13 @@ export class CompanionRobotComponent implements OnInit, OnDestroy {
     this.microBehavior = 'none';
   }
 
-  /**
-   * Slowly changing internal variables stop the randomizer from looking like
-   * a slot machine. The face has a "mood" and "energy" that influence choices.
-   */
   private startMoodDrift() {
     const drift = () => {
-      this.mood = this.clamp(this.mood + (Math.random() - .5) * .16);
-      this.energy = this.clamp(this.energy + (Math.random() - .5) * .20);
-      this.attention = this.clamp(this.attention + (Math.random() - .5) * .22);
-
-      this.moodId = setTimeout(drift, this.naturalDuration(5500, 11000));
+      this.mood = Math.max(0.1, Math.min(0.95, this.mood + (Math.random() - 0.5) * 0.18));
+      this.energy = Math.max(0.1, Math.min(0.95, this.energy + (Math.random() - 0.5) * 0.22));
+      this.attention = Math.max(0.1, Math.min(0.95, this.attention + (Math.random() - 0.5) * 0.2));
+      this.moodId = setTimeout(drift, this.naturalDuration(6000, 12000));
     };
-
     drift();
-  }
-
-  private clamp(value: number): number {
-    return Math.max(.05, Math.min(.95, value));
-  }
-
-  private generateSleepZs() {
-    this.sleepZs = [];
-
-    for (let i = 0; i < 4; i++) {
-      this.sleepZs.push({
-        delay: i * .8,
-        x: 15 + Math.random() * 20,
-        y: -30 - Math.random() * 20
-      });
-    }
-  }
-
-  private generateSparkles() {
-    this.sparkles = [];
-
-    for (let i = 0; i < 8; i++) {
-      this.sparkles.push({
-        x: 10 + Math.random() * 80,
-        y: 10 + Math.random() * 60,
-        delay: Math.random() * 2
-      });
-    }
   }
 }

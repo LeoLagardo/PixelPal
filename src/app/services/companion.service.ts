@@ -419,7 +419,7 @@ export class CompanionService {
         this.lastError$.next(null);
       } else if (Array.isArray(data)) {
         this.updateScreens(data);
-      } else if (data.type === 'sync' || data.type === 'screens') {
+      } else if (data.type === 'sync' || data.type === 'screens' || data.type === 'screens_updated') {
         if (data.screens && Array.isArray(data.screens)) {
           this.updateScreens(data.screens);
         }
@@ -433,11 +433,11 @@ export class CompanionService {
   }
 
   private applyScreenLimits() {
-    const isPro = this.entitlementService.isPro() || this.activeSessionPlan$.value === 'pro';
-    const limit = isPro ? Infinity : FREE_SCREEN_LIMIT;
-    const effectiveScreens = this.rawScreens.slice(0, limit);
-    this.screens$.next(effectiveScreens);
-    localStorage.setItem('cached_screens', JSON.stringify(effectiveScreens));
+    // Retain all screens in screens$ so carousel preserves all configured screens.
+    // Free tier devices will see an upgrade / locked slide for Pro screens or screens >= FREE_SCREEN_LIMIT.
+    const allScreens = this.rawScreens || [];
+    this.screens$.next(allScreens);
+    localStorage.setItem('cached_screens', JSON.stringify(allScreens));
     localStorage.setItem('raw_screens', JSON.stringify(this.rawScreens));
   }
 

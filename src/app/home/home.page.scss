@@ -442,21 +442,54 @@
   letter-spacing: 0.2px;
 }
 
-.bottom-icon-btn.pro-bar-btn {
-  background: rgba(168, 85, 247, 0.15);
-  border: 1px solid rgba(168, 85, 247, 0.4);
+.bottom-icon-btn.upgrade-bar-btn {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.5);
   color: #c084fc;
-  padding: 3px 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+  transition: all 0.2s ease;
 }
 
-.bottom-icon-btn.pro-bar-btn:hover {
-  background: rgba(168, 85, 247, 0.28);
-  color: #e9d5ff;
+.bottom-icon-btn.upgrade-bar-btn:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(99, 102, 241, 0.35) 100%);
+  border-color: #d8b4fe;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+  transform: translateY(-1px);
 }
 
-.pro-bar-text {
-  font-weight: 800 !important;
-  letter-spacing: 0.5px !important;
+.upgrade-bar-text {
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* PRO member badge when unlocked */
+.pro-badge-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%);
+  border: 1px solid rgba(192, 132, 252, 0.45);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+  user-select: none;
+}
+
+.pro-sparkle-icon {
+  font-size: 13px;
+  color: #e879f9;
+  filter: drop-shadow(0 0 4px #e879f9);
+}
+
+.pro-badge-text {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #f5d0fe;
+  text-transform: uppercase;
 }
 
 .bottom-icon-btn ion-icon {
@@ -498,4 +531,138 @@ ion-icon.spinning {
 .hidden {
   display: none;
 }
+
+/* ─── PRO Locked Slide Overlay ─── */
+.pro-locked-slide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.pro-locked-glass-card {
+  width: 100%;
+  max-width: 440px;
+  background: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.16) 0%, rgba(18, 18, 22, 0.92) 80%);
+  border: 1px solid rgba(192, 132, 252, 0.28);
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-sizing: border-box;
+  animation: pro-fade-in 0.35s ease-out;
+}
+
+@keyframes pro-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pro-locked-badge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pro-locked-icon-halo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(99, 102, 241, 0.22) 100%);
+  border: 1px solid rgba(216, 180, 254, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.pro-locked-lock-icon {
+  font-size: 24px;
+  color: #f0abfc;
+  filter: drop-shadow(0 0 6px rgba(240, 171, 252, 0.5));
+}
+
+.pro-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+.pro-pill-badge ion-icon {
+  font-size: 11px;
+}
+
+.pro-locked-title {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.pro-locked-desc {
+  margin: 0 0 18px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #b3b3c2;
+  max-width: 360px;
+}
+
+.pro-locked-unlock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+}
+
+.pro-locked-unlock-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.55);
+}
+
+.pro-locked-unlock-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.pro-locked-unlock-btn ion-icon {
+  font-size: 15px;
+  color: #f5d0fe;
+}
+
 

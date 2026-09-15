@@ -77,60 +77,83 @@
 
                   <!-- Content Area inside Slide -->
                   <div class="slide-content-area">
-                    <!-- Type 1: Grid -->
-                    @if (screen.type === 'grid') {
-                      <div
-                        class="grid-layout-container"
-                        [ngClass]="screen | gridTheme"
-                        [ngStyle]="screen | gridStyles"
-                      >
-                        @for (button of screen | gridButtons; track $index) {
-                          <div class="grid-cell">
-                            @if (button) {
-                              <app-deck-button
-                                [button]="button"
-                                (triggerAction)="onButtonTrigger($event)"
-                              ></app-deck-button>
-                            } @else {
-                              <div class="empty-grid-slot"></div>
-                            }
+                    @if (isProScreen(screen, idx)) {
+                      <div class="pro-locked-slide">
+                        <div class="pro-locked-glass-card">
+                          <div class="pro-locked-badge-wrap">
+                            <div class="pro-locked-icon-halo">
+                              <ion-icon name="lock-closed-outline" class="pro-locked-lock-icon"></ion-icon>
+                            </div>
+                            <span class="pro-pill-badge">
+                              <ion-icon name="sparkles"></ion-icon> PRO FEATURE
+                            </span>
                           </div>
-                        }
+
+                          <h3 class="pro-locked-title">{{ getProScreenTitle(screen, idx) }}</h3>
+                          <p class="pro-locked-desc">{{ getProScreenDesc(screen, idx) }}</p>
+
+                          <button type="button" class="pro-locked-unlock-btn" (click)="openProModal()">
+                            <ion-icon name="sparkles"></ion-icon>
+                            <span>Unlock Lifetime PRO</span>
+                          </button>
+                        </div>
                       </div>
-                    }
-
-                    <!-- Type 2: Media -->
-                    @if (screen.type === 'media') {
-                      <div
-                        class="media-layout-container">
-                        @if (screen.config.media_type === 'image' && screen.config.source.type === 'url') {
-                          @if (screen.config.source.url) {
-                            <img
-                              [src]="screen.config.source.url"
-                              [alt]="screen.config.source.name || screen.name || 'Media Image'"
-                              class="media-image"
-                            />
+                    } @else {
+                      <!-- Type 1: Grid -->
+                      @if (screen.type === 'grid') {
+                        <div
+                          class="grid-layout-container"
+                          [ngClass]="screen | gridTheme"
+                          [ngStyle]="screen | gridStyles"
+                        >
+                          @for (button of screen | gridButtons; track $index) {
+                            <div class="grid-cell">
+                              @if (button) {
+                                <app-deck-button
+                                  [button]="button"
+                                  (triggerAction)="onButtonTrigger($event)"
+                                ></app-deck-button>
+                              } @else {
+                                <div class="empty-grid-slot"></div>
+                              }
+                            </div>
                           }
-                        } @else {
-                          @switch (getMediaType(screen)) {
-                            @case ('companion') {
-                              <app-companion-robot></app-companion-robot>
-                            }
+                        </div>
+                      }
 
-                            @case ('standby-clock') {
-                              <app-standby-clock></app-standby-clock>
+                      <!-- Type 2: Media -->
+                      @if (screen.type === 'media') {
+                        <div
+                          class="media-layout-container">
+                          @if (['image', 'animation'].includes(screen.config.media_type) && screen.config.source.type === 'url') {
+                            @if (screen.config.source.url) {
+                              <img
+                                [src]="screen.config.source.url"
+                                [alt]="screen.config.source.name || screen.name || 'Media Image'"
+                                class="media-image"
+                              />
                             }
+                          } @else {
+                            @switch (getMediaType(screen)) {
+                              @case ('companion') {
+                                <app-companion-robot></app-companion-robot>
+                              }
 
-                            @case ('retro-clock') {
-                              <app-retro-clock></app-retro-clock>
-                            }
+                              @case ('standby-clock') {
+                                <app-standby-clock></app-standby-clock>
+                              }
 
-                            @case ('heart') {
-                              <app-pixel-heart></app-pixel-heart>
+                              @case ('retro-clock') {
+                                <app-retro-clock></app-retro-clock>
+                              }
+
+                              @case ('heart') {
+                                <app-pixel-heart></app-pixel-heart>
+                              }
                             }
                           }
-                        }
-                      </div>
+                        </div>
+                      }
                     }
                   </div>
                 </div>
@@ -180,13 +203,18 @@
               <div class="bottom-bar-right">
                 @if (!isPro) {
                   <button
-                    class="bottom-icon-btn pro-bar-btn"
+                    class="bottom-icon-btn upgrade-bar-btn"
                     (click)="openProModal()"
-                    title="Unlock Lifetime PRO"
+                    title="Upgrade to Lifetime PRO"
                   >
-                    <ion-icon name="sparkles-outline" class="pro-bar-icon"></ion-icon>
-                    <span class="btn-text pro-bar-text">PRO</span>
+                    <ion-icon name="sparkles-outline" class="upgrade-bar-icon"></ion-icon>
+                    <span class="btn-text upgrade-bar-text">Upgrade</span>
                   </button>
+                } @else {
+                  <div class="pro-badge-indicator" title="Lifetime PRO Active">
+                    <ion-icon name="sparkles" class="pro-sparkle-icon"></ion-icon>
+                    <span class="pro-badge-text">PRO</span>
+                  </div>
                 }
                 <button
                   class="bottom-icon-btn"

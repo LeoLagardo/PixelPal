@@ -29,12 +29,14 @@ import {
   qrCodeOutline,
   chevronBackOutline,
   chevronForwardOutline,
-  sparklesOutline
+  sparklesOutline,
+  sparkles,
+  lockClosedOutline
 } from 'ionicons/icons';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
 import { ProModalComponent } from '../components/pro-modal/pro-modal.component';
-import { EntitlementService } from '../services/entitlement.service';
+import { EntitlementService, FREE_SCREEN_LIMIT } from '../services/entitlement.service';
 import { GridStylesPipe, GridButtonsPipe, GridThemePipe } from '../pipes';
 
 import { GRADIENT_THEMES } from '../constants/themes.constant';
@@ -110,6 +112,72 @@ export class HomePage implements OnInit, OnDestroy {
     return 'unknown';
   }
 
+  public isCustomMedia(screen: any): boolean {
+    return (
+      screen?.type === 'media' &&
+      Boolean(screen?.config?.source?.type === 'url' || screen?.config?.media_type === 'image' || screen?.id === 'tpl-custom-media')
+    );
+  }
+
+  public isProScreen(screen: any, index: number): boolean {
+    if (this.isPro) return false;
+
+    // 1. Screens beyond the free screen limit (index >= 2)
+    if (index >= FREE_SCREEN_LIMIT) {
+      return true;
+    }
+
+    // 2. Media templates that require Pro
+    if (screen?.type === 'media') {
+      const mediaType = this.getMediaType(screen);
+      if (mediaType === 'companion' || screen?.id === 'tpl-media-companion') {
+        return true;
+      }
+      if (this.isCustomMedia(screen)) {
+        return true;
+      }
+    }
+
+    // 3. Any screen explicitly marked with is_pro
+    if (screen?.is_pro) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public getProScreenTitle(screen: any, index: number): string {
+    if (screen?.type === 'media') {
+      const mediaType = this.getMediaType(screen);
+      if (mediaType === 'companion' || screen?.id === 'tpl-media-companion') {
+        return 'Companion Bot';
+      }
+      if (this.isCustomMedia(screen)) {
+        return 'Custom Media Screen';
+      }
+    }
+    if (index >= FREE_SCREEN_LIMIT) {
+      return screen?.name ? `${screen.name}` : 'Extra Screen';
+    }
+    return screen?.name || 'PRO Screen';
+  }
+
+  public getProScreenDesc(screen: any, index: number): string {
+    if (screen?.type === 'media') {
+      const mediaType = this.getMediaType(screen);
+      if (mediaType === 'companion' || screen?.id === 'tpl-media-companion') {
+        return 'Interactive companion bot with animated expressions is an exclusive Pro feature.';
+      }
+      if (this.isCustomMedia(screen)) {
+        return 'Personal image and animated GIF media screens are unlocked with Lifetime Pro.';
+      }
+    }
+    if (index >= FREE_SCREEN_LIMIT) {
+      return `Free plan includes up to ${FREE_SCREEN_LIMIT} screens. Unlock Lifetime Pro to access unlimited screens.`;
+    }
+    return 'This screen contains Pro features. Upgrade once to unlock all screens and themes forever.';
+  }
+
   constructor(
     public companionService: CompanionService,
     private entitlementService: EntitlementService,
@@ -117,17 +185,31 @@ export class HomePage implements OnInit, OnDestroy {
     private router: Router,
     private orientationService: OrientationService
   ) {
-    addIcons({ settingsOutline, refreshOutline, unlinkOutline, wifiOutline, qrCodeOutline, chevronBackOutline, chevronForwardOutline, sparklesOutline });
+    addIcons({
+      settingsOutline,
+      refreshOutline,
+      unlinkOutline,
+      wifiOutline,
+      qrCodeOutline,
+      chevronBackOutline,
+      chevronForwardOutline,
+      sparklesOutline,
+      sparkles,
+      lockClosedOutline,
+    });
   }
 
   ngOnInit() {
     this.orientationService.lockLandscape();
 
-    this.isPro = this.entitlementService.isPro();
+    this.isPro = this.entitlementService.isPro() || this.companionService.activeSessionPlan$.value === 'pro';
 
     this.subs.add(
-      this.entitlementService.tier$.subscribe((tier) => {
-        this.isPro = tier === 'pro';
+      merge(
+        this.entitlementService.tier$,
+        this.companionService.activeSessionPlan$
+      ).subscribe(() => {
+        this.isPro = this.entitlementService.isPro() || this.companionService.activeSessionPlan$.value === 'pro';
       })
     );
 
