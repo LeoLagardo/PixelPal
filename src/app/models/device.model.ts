@@ -1,10 +1,19 @@
 export type EntitlementTier = 'free' | 'pro';
+export type EntitlementSource = 'google_play' | 'app_store' | 'local' | 'mock' | 'trial';
 
 export interface EntitlementPayload {
   tier: EntitlementTier;
   features?: string[];
-  source?: 'google_play' | 'app_store' | 'local' | 'mock';
+  source?: EntitlementSource;
   receipt_signature?: string;
+}
+
+export interface TrialStatus {
+  enabled: boolean;
+  isActive: boolean;
+  isExpired: boolean;
+  expiresAt: string | null;
+  daysRemaining: number | null;
 }
 
 export interface PairedDevice {

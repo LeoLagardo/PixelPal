@@ -32,5 +32,9 @@ export const THEMES = [
   "obsidian-gold",
   "crimson-void",
   "amethyst-purple",
-  "matrix-code"
+  "matrix-code",
+  "dark-minimal",
+  "dark-texture",
+  "stars",
+  "charcoal-slate"
 ];

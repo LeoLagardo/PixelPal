@@ -130,7 +130,8 @@ public class GooglePlayBillingPlugin extends Plugin implements PurchasesUpdatedL
                         .setProductList(productList)
                         .build();
 
-                billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
+                billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsResult) -> {
+                    List<ProductDetails> productDetailsList = productDetailsResult != null ? productDetailsResult.getProductDetailsList() : null;
                     if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && productDetailsList != null && !productDetailsList.isEmpty()) {
                         ProductDetails details = productDetailsList.get(0);
                         productDetailsMap.put(details.getProductId(), details);
@@ -194,7 +195,8 @@ public class GooglePlayBillingPlugin extends Plugin implements PurchasesUpdatedL
                             .setProductList(productList)
                             .build();
 
-                    billingClient.queryProductDetailsAsync(queryParams, (billingResult, productDetailsList) -> {
+                    billingClient.queryProductDetailsAsync(queryParams, (billingResult, productDetailsResult) -> {
+                        List<ProductDetails> productDetailsList = productDetailsResult != null ? productDetailsResult.getProductDetailsList() : null;
                         if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && productDetailsList != null && !productDetailsList.isEmpty()) {
                             ProductDetails fetchedDetails = productDetailsList.get(0);
                             productDetailsMap.put(fetchedDetails.getProductId(), fetchedDetails);

@@ -1,0 +1,43 @@
+/* =====================================================
+   Theme: Dark Minimal
+   Applied via: .theme-dark-minimal on .grid-layout-container
+   ===================================================== */
+
+.theme-dark-minimal {
+  /* Grid background */
+  background: #0B0B0D !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: rgba(26, 26, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: rgba(38, 38, 44, 0.95);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #e2e8f0;
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}

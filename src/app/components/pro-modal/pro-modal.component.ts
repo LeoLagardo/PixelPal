@@ -29,6 +29,7 @@ import {
 } from 'ionicons/icons';
 import { BillingService } from '../../services/billing.service';
 import { EntitlementService } from '../../services/entitlement.service';
+import { TrialStatus } from '../../models';
 
 @Component({
   selector: 'app-pro-modal',
@@ -126,12 +127,18 @@ import { EntitlementService } from '../../services/entitlement.service';
 
         <!-- Actions -->
         <div class="actions-section">
-          @if (isPro) {
+          @if (isLifetimePro) {
             <div class="already-pro-box">
               <ion-icon name="checkmark-circle" class="check-icon"></ion-icon>
               <span>You own Lifetime PRO! All features unlocked.</span>
             </div>
           } @else {
+            @if (isTrialPro) {
+              <div class="trial-info-banner">
+                <ion-icon name="sparkles-outline" class="trial-banner-icon"></ion-icon>
+                <span>You're currently using a <strong>30-Day Pro Trial</strong> ({{ trialStatus?.daysRemaining ?? 0 }}d left). Upgrade anytime for permanent lifetime access.</span>
+              </div>
+            }
             <button
               type="button"
               class="purchase-btn"
@@ -348,8 +355,24 @@ import { EntitlementService } from '../../services/entitlement.service';
       font-weight: 600;
       font-size: 14px;
     }
-    .check-icon {
+    .trial-info-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(168, 85, 247, 0.16);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      color: #e9d5ff;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: left;
+    }
+    .trial-banner-icon {
       font-size: 20px;
+      color: #c084fc;
+      flex-shrink: 0;
     }
     .restore-row {
       display: flex;
@@ -384,6 +407,23 @@ export class ProModalComponent implements OnInit, OnDestroy {
   public isPurchasing = false;
   public isRestoring = false;
   public isPro = false;
+  public trialStatus: TrialStatus | null = null;
+
+  public get isLifetimePro(): boolean {
+    return this.isPro && (
+      !this.trialStatus?.enabled ||
+      !this.trialStatus.isActive ||
+      this.entitlementService.getEntitlementPayload().source === 'google_play'
+    );
+  }
+
+  public get isTrialPro(): boolean {
+    return this.isPro && Boolean(
+      this.trialStatus?.enabled &&
+      this.trialStatus.isActive &&
+      this.entitlementService.getEntitlementPayload().source === 'trial'
+    );
+  }
 
   public showToast = false;
   public toastMsg = '';
@@ -411,7 +451,17 @@ export class ProModalComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.isPro = this.entitlementService.isPro();
+    this.trialStatus = this.entitlementService.getTrialStatus();
     this.formattedPrice = this.billingService.getFormattedPrice();
+
+    // Refresh product details from Google Play on modal open
+    this.billingService.loadProductDetails();
+
+    this.subs.add(
+      this.entitlementService.trialStatus$.subscribe((status) => {
+        this.trialStatus = status;
+      })
+    );
 
     this.subs.add(
       this.entitlementService.tier$.subscribe((tier) => {
@@ -448,7 +498,7 @@ export class ProModalComponent implements OnInit, OnDestroy {
     const res = await this.billingService.purchasePro();
     if (res.success) {
       this.triggerToast('🎉 Welcome to PixelPal PRO! All features unlocked.');
-      setTimeout(() => this.dismiss(), 1500);
+      setTimeout(() => this.dismiss({ purchased: true }), 1500);
     } else if (res.cancelled) {
       // User dismissed Google Play sheet - no toast needed
     } else if (res.error) {
@@ -460,12 +510,12 @@ export class ProModalComponent implements OnInit, OnDestroy {
     const res = await this.billingService.restorePurchases();
     this.triggerToast(res.message);
     if (res.restored) {
-      setTimeout(() => this.dismiss(), 1500);
+      setTimeout(() => this.dismiss({ restored: true }), 1500);
     }
   }
 
-  public dismiss() {
-    this.modalCtrl.dismiss();
+  public dismiss(result?: any) {
+    this.modalCtrl.dismiss(result);
   }
 
   private triggerToast(msg: string) {

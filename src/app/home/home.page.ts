@@ -31,8 +31,11 @@ import {
   chevronForwardOutline,
   sparklesOutline,
   sparkles,
-  lockClosedOutline
+  lockClosedOutline,
+  cloudDownloadOutline,
+  copyOutline
 } from 'ionicons/icons';
+import { environment } from '../../environments/environment';
 import { PixelHeartComponent } from '../components/pixel-heart.component';
 import { CompanionRobotComponent } from '../components/companion-bot.component';
 import { ProModalComponent } from '../components/pro-modal/pro-modal.component';
@@ -76,6 +79,45 @@ export class HomePage implements OnInit, OnDestroy {
   public connectionState: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
   public screens: ScreenConfig[] = [];
   public currentScreenIndex = 0;
+  public desktopDownloadUrl = environment.desktopDownloadUrl;
+
+  public openDesktopDownload(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.open(this.desktopDownloadUrl, '_system');
+  }
+
+  public async copyDownloadLink(event?: Event): Promise<void> {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(this.desktopDownloadUrl);
+        this.triggerToast('Download link copied to clipboard!');
+        return;
+      }
+      const textArea = document.createElement('textarea');
+      textArea.value = this.desktopDownloadUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (success) {
+        this.triggerToast('Download link copied to clipboard!');
+      } else {
+        this.triggerToast('Failed to copy download link.');
+      }
+    } catch {
+      this.triggerToast('Could not copy link to clipboard.');
+    }
+  }
 
   // Toast for errors
   public showToast = false;
@@ -196,6 +238,8 @@ export class HomePage implements OnInit, OnDestroy {
       sparklesOutline,
       sparkles,
       lockClosedOutline,
+      cloudDownloadOutline,
+      copyOutline
     });
   }
 
@@ -252,6 +296,14 @@ export class HomePage implements OnInit, OnDestroy {
       handle: true,
     });
     await modal.present();
+    const { data } = await modal.onDidDismiss();
+
+    if (data?.purchased || data?.restored) {
+      if (this.companionService.connectionState$.value === 'connected') {
+        this.companionService.disconnect(true);
+        setTimeout(() => this.companionService.connect(), 200);
+      }
+    }
   }
 
   ionViewWillEnter() {
@@ -290,7 +342,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   // Toast
-  private triggerToast(msg: string) {
+  public triggerToast(msg: string) {
     this.toastMsg = msg;
     this.showToast = true;
   }

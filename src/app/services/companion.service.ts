@@ -41,9 +41,16 @@ export class CompanionService {
   }
 
   private initEntitlementListener() {
-    this.entitlementService.tier$.subscribe(() => {
+    this.entitlementService.tier$.subscribe((tier) => {
       if (this.rawScreens.length > 0) {
         this.applyScreenLimits();
+      }
+      if (tier === 'free') {
+        this.activeSessionPlan$.next('free');
+      }
+      if (this.connectionState$.value === 'connected' && this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.disconnect(true);
+        setTimeout(() => this.connect(), 200);
       }
     });
   }
@@ -171,7 +178,7 @@ export class CompanionService {
           // 1. Authenticate with token, client metadata & entitlement
           const authPayload: HandshakeAuthPayload = {
             token: device.token,
-            device_name: device.device_name || device.name || 'PixelPal Mobile',
+            device_name: this.getClientDeviceName(),
             client_version: '1.0.0',
             schema_version: 1,
             entitlement: this.entitlementService.getEntitlementPayload(),
@@ -456,6 +463,58 @@ export class CompanionService {
 
   public sendAction(action: string, payload: string) {
     this.send({ action, payload });
+  }
+
+  public getClientDeviceName(): string {
+    try {
+      const stored = localStorage.getItem('pixelpal_client_device_name');
+      if (stored && stored.trim()) {
+        return stored.trim();
+      }
+
+      const ua = navigator.userAgent || '';
+      const platform = Capacitor.getPlatform();
+
+      if (platform === 'android' || /Android/i.test(ua)) {
+        // Typical UA in Android Webview:
+        // "Mozilla/5.0 (Linux; Android 14; SM-S918B Build/UP1A.231005.007; wv) AppleWebKit/537.36 ..."
+        // "Mozilla/5.0 (Linux; Android 13; Pixel 7 Pro Build/...) ..."
+        // "Mozilla/5.0 (Linux; U; Android 12; zh-cn; Redmi Note 11 Build/...) ..."
+        const match = ua.match(/Android[^;)]*;\s*(?:[a-zA-Z]{2,3}[-_][a-zA-Z]{2,3};\s*)?([^;)]+)/i);
+        if (match && match[1]) {
+          let model = match[1].trim();
+          model = model.replace(/\s*Build\/[^\s;)]+/i, '').replace(/\s*wv\b/i, '').trim();
+          if (model && !/^(Linux|Android|Release|wv)$/i.test(model)) {
+            return model;
+          }
+        }
+        return 'Android Phone';
+      }
+
+      if (platform === 'ios' || /iPhone|iPad|iPod/i.test(ua)) {
+        if (/iPad/i.test(ua)) return 'iPad';
+        if (/iPhone/i.test(ua)) return 'iPhone';
+        return 'iPhone';
+      }
+
+      if (platform === 'web') {
+        if (/Macintosh/i.test(ua)) return 'Mac';
+        if (/Windows/i.test(ua)) return 'Windows PC';
+        return 'Web Client';
+      }
+    } catch (e) {
+      console.warn('[CompanionService] Failed to detect client device name:', e);
+    }
+
+    return 'PixelPal Mobile';
+  }
+
+  public setClientDeviceName(name: string): void {
+    if (name && name.trim()) {
+      localStorage.setItem('pixelpal_client_device_name', name.trim());
+    } else {
+      localStorage.removeItem('pixelpal_client_device_name');
+    }
   }
 }
 

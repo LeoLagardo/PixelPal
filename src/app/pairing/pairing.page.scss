@@ -329,6 +329,74 @@
     strong {
       color: #f1f5f9;
     }
+
+    &.step-with-action {
+      align-items: flex-start;
+
+      .step-info-col {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        flex: 1;
+      }
+    }
+  }
+}
+
+.step-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.step-download-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #60a5fa;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  ion-icon {
+    font-size: 14px;
+  }
+
+  &:active {
+    transform: scale(0.96);
+    background: rgba(59, 130, 246, 0.25);
+  }
+}
+
+.step-copy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  ion-icon {
+    font-size: 13px;
+  }
+
+  &:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.16);
   }
 }
 
@@ -928,4 +996,85 @@
   justify-content: center;
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
   z-index: 10;
+}
+
+/* ==================== DESKTOP APP DOWNLOAD BANNER ==================== */
+.desktop-download-banner {
+  background: linear-gradient(135deg, rgba(22, 25, 34, 0.9) 0%, rgba(30, 36, 50, 0.85) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin-top: 8px;
+}
+
+.download-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 20px;
+    color: #3b82f6;
+  }
+}
+
+.banner-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.banner-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.2px;
+}
+
+.banner-subtitle {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.banner-buttons-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.banner-download-btn {
+  --border-color: rgba(59, 130, 246, 0.5);
+  --color: #60a5fa;
+  font-weight: 600;
+  font-size: 12.5px;
+  margin: 0;
+  letter-spacing: 0.2px;
+  flex: 1;
+}
+
+.banner-copy-btn {
+  --border-color: rgba(255, 255, 255, 0.2);
+  --color: #cbd5e1;
+  font-weight: 600;
+  font-size: 12.5px;
+  margin: 0;
+  letter-spacing: 0.2px;
 }

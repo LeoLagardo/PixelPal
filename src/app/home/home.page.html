@@ -19,6 +19,19 @@
               <ion-icon name="qr-code-outline" slot="start"></ion-icon>
               Scan QR / Setup Connection
             </ion-button>
+            <div class="unpaired-download-hint">
+              <span class="hint-text">Don't have the PC app yet?</span>
+              <div class="unpaired-download-actions">
+                <button type="button" class="download-link-btn" (click)="openDesktopDownload($event)">
+                  <ion-icon name="cloud-download-outline"></ion-icon>
+                  <span>Download for Windows</span>
+                </button>
+                <button type="button" class="copy-link-btn" (click)="copyDownloadLink($event)" title="Copy Link">
+                  <ion-icon name="copy-outline"></ion-icon>
+                  <span>Copy Link</span>
+                </button>
+              </div>
+            </div>
           </ion-card-content>
         </ion-card>
       </div>

@@ -1,0 +1,42 @@
+/* =====================================================
+   Theme: Dark Carbon (Dark Texture)
+   Applied via: .theme-dark-texture on .grid-layout-container
+   ===================================================== */
+
+.theme-dark-texture {
+  /* Grid background */
+  background: linear-gradient(160deg, #0B0B0D 0%, #171719 40%, #1F1F22 100%) !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: linear-gradient(145deg, rgba(35, 35, 42, 0.85) 0%, rgba(20, 20, 24, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: linear-gradient(145deg, rgba(48, 48, 58, 0.95) 0%, rgba(28, 28, 34, 0.95) 100%);
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #f1f5f9;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #cbd5e1;
+    font-weight: 500;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}

@@ -99,9 +99,21 @@
             Quick 3-Step Setup
           </h3>
           <ol class="guide-steps">
-            <li>
+            <li class="step-with-action">
               <span class="step-num">1</span>
-              <span class="step-text">Open <strong>PixelPal</strong> on your PC</span>
+              <div class="step-info-col">
+                <span class="step-text">Open <strong>PixelPal</strong> on your PC</span>
+                <div class="step-action-row">
+                  <button type="button" class="step-download-badge" (click)="openDesktopDownload($event)">
+                    <ion-icon name="cloud-download-outline"></ion-icon>
+                    <span>Download PC App</span>
+                  </button>
+                  <button type="button" class="step-copy-badge" (click)="copyDownloadLink($event)" title="Copy Link">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    <span>Copy Link</span>
+                  </button>
+                </div>
+              </div>
             </li>
             <li>
               <span class="step-num">2</span>
@@ -229,6 +241,14 @@
               <ion-button size="small" fill="outline" color="primary" (click)="setMode('qr')">
                 <ion-icon name="qr-code-outline" slot="start"></ion-icon>
                 Try QR Code Instead
+              </ion-button>
+              <ion-button size="small" fill="outline" color="secondary" (click)="openDesktopDownload()">
+                <ion-icon name="cloud-download-outline" slot="start"></ion-icon>
+                Download PC App
+              </ion-button>
+              <ion-button size="small" fill="outline" color="medium" (click)="copyDownloadLink()">
+                <ion-icon name="copy-outline" slot="start"></ion-icon>
+                Copy Link
               </ion-button>
               <ion-button size="small" fill="clear" color="medium" (click)="setMode('manual')">
                 Enter IP Manually
@@ -367,7 +387,41 @@
           </div>
         </ion-accordion>
       </ion-accordion-group>
-    </div> -->
+    <!-- Desktop App Download Helper Banner -->
+    <div class="desktop-download-banner">
+      <div class="download-banner-content">
+        <div class="banner-icon-box">
+          <ion-icon name="desktop-outline"></ion-icon>
+        </div>
+        <div class="banner-text-content">
+          <span class="banner-title">Need the PC Companion?</span>
+          <span class="banner-subtitle">Download PixelPal for Windows to start controlling your PC.</span>
+        </div>
+      </div>
+      <div class="banner-buttons-row">
+        <ion-button
+          fill="outline"
+          color="primary"
+          size="small"
+          class="banner-download-btn"
+          (click)="openDesktopDownload($event)"
+        >
+          <ion-icon name="cloud-download-outline" slot="start"></ion-icon>
+          Download for Windows
+        </ion-button>
+        <ion-button
+          fill="outline"
+          color="light"
+          size="small"
+          class="banner-copy-btn"
+          (click)="copyDownloadLink($event)"
+          title="Copy Link to Clipboard"
+        >
+          <ion-icon name="copy-outline" slot="start"></ion-icon>
+          Copy Link
+        </ion-button>
+      </div>
+    </div>
 
   </div>
 

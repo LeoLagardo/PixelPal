@@ -1,0 +1,44 @@
+/* =====================================================
+   Theme: Starfield (Stars)
+   Applied via: .theme-stars on .grid-layout-container
+   ===================================================== */
+
+.theme-stars {
+  /* Grid background */
+  background: radial-gradient(ellipse at 20% 30%, #ffffff22 0%, transparent 40%), radial-gradient(ellipse at 70% 60%, #ffffff18 0%, transparent 35%), #0B0B0D !important;
+
+  /* --- Filled button base --- */
+  app-deck-button .deck-button-element {
+    background: rgba(18, 16, 38, 0.65);
+    border: 1px solid rgba(192, 132, 252, 0.25);
+    border-radius: 10px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 4px 16px rgba(10, 5, 25, 0.5), inset 0 0 12px rgba(192, 132, 252, 0.05);
+  }
+
+  /* --- Hover / active states --- */
+  app-deck-button .deck-button-element:hover,
+  app-deck-button .deck-button-element.is-active {
+    background: rgba(28, 24, 60, 0.85);
+    border-color: rgba(192, 132, 252, 0.6);
+    box-shadow: 0 6px 20px rgba(192, 132, 252, 0.25), inset 0 0 16px rgba(192, 132, 252, 0.15);
+  }
+
+  /* --- Icon --- */
+  app-deck-button .icon-container {
+    color: #e9d5ff;
+    filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.6));
+  }
+
+  /* --- Label --- */
+  app-deck-button .button-label {
+    color: #c084fc;
+    font-weight: 600;
+  }
+
+  /* --- Empty slot border accent --- */
+  .empty-grid-slot {
+    border-color: rgba(192, 132, 252, 0.2);
+  }
+}

@@ -48,9 +48,12 @@ import {
   hardwareChipOutline,
   scanOutline,
   alertCircleOutline,
-  shieldCheckmarkOutline
+  shieldCheckmarkOutline,
+  cloudDownloadOutline,
+  copyOutline
 } from 'ionicons/icons';
 import jsQR from 'jsqr';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-pairing',
@@ -130,8 +133,50 @@ export class PairingPage implements OnInit, OnDestroy {
       hardwareChipOutline,
       scanOutline,
       alertCircleOutline,
-      shieldCheckmarkOutline
+      shieldCheckmarkOutline,
+      cloudDownloadOutline,
+      copyOutline
     });
+  }
+
+  public desktopDownloadUrl = environment.desktopDownloadUrl;
+
+  public openDesktopDownload(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.open(this.desktopDownloadUrl, '_system');
+  }
+
+  public async copyDownloadLink(event?: Event): Promise<void> {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(this.desktopDownloadUrl);
+        this.triggerToast('Download link copied to clipboard!');
+        return;
+      }
+      const textArea = document.createElement('textarea');
+      textArea.value = this.desktopDownloadUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (success) {
+        this.triggerToast('Download link copied to clipboard!');
+      } else {
+        this.triggerToast('Failed to copy download link.');
+      }
+    } catch {
+      this.triggerToast('Could not copy link to clipboard.');
+    }
   }
 
   ngOnInit() {

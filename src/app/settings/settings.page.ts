@@ -7,7 +7,7 @@ import { SoundService, SOUND_PRESETS } from '../services/sound.service';
 import { EntitlementService } from '../services/entitlement.service';
 import { BillingService } from '../services/billing.service';
 import { ProModalComponent } from '../components/pro-modal/pro-modal.component';
-import { PairedDevice, SoundPreset, SoundSettings, SoundTuneId } from '../models';
+import { PairedDevice, SoundPreset, SoundSettings, SoundTuneId, TrialStatus } from '../models';
 import {
   IonHeader,
   IonToolbar,
@@ -46,8 +46,11 @@ import {
   volumeMediumOutline,
   musicalNotesOutline,
   playOutline,
-  sparklesOutline
+  sparklesOutline,
+  cloudDownloadOutline,
+  copyOutline
 } from 'ionicons/icons';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-settings',
@@ -201,18 +204,24 @@ import {
                 <ion-icon name="sparkles-outline" class="header-icon" style="color: #a855f7;"></ion-icon>
                 <h3 class="section-title" style="color: #a855f7;">Membership & Entitlements</h3>
               </div>
-              <ion-badge [color]="isProTier ? 'tertiary' : 'medium'">
-                {{ isProTier ? 'PRO MEMBER' : 'FREE TIER' }}
+              <ion-badge [color]="isLifetimePro ? 'tertiary' : isTrialPro ? 'success' : trialStatus?.isExpired ? 'danger' : 'medium'">
+                {{ isLifetimePro ? 'LIFETIME PRO' : isTrialPro ? ('PRO TRIAL (' + (trialStatus?.daysRemaining ?? 0) + 'd left)') : trialStatus?.isExpired ? 'TRIAL EXPIRED' : 'FREE TIER' }}
               </ion-badge>
             </div>
 
             <p style="color: #bbbbbb; font-size: 13px; margin-bottom: 14px;">
-              {{ isProTier 
-                ? '⭐ Lifetime PRO unlocked! Unlimited screens, multi-device support, custom media & all themes active.' 
-                : 'Free tier active (Limit: 2 screens, 1 connected device). Upgrade once to unlock all capabilities forever.' }}
+              @if (isLifetimePro) {
+                ⭐ Lifetime PRO unlocked! Unlimited screens, multi-device support, custom media & all themes active.
+              } @else if (isTrialPro) {
+                ⭐ 30-Day Pro Trial active (Expires {{ trialExpiryFormatted }}). Unlimited screens & all features unlocked!
+              } @else if (trialStatus?.isExpired) {
+                Your 30-day Pro trial has ended. Upgrade to Lifetime Pro to re-unlock unlimited screens and all premium capabilities forever.
+              } @else {
+                Free tier active (Limit: 2 screens, 1 connected device). Upgrade once to unlock all capabilities forever.
+              }
             </p>
 
-            @if (!isProTier) {
+            @if (!isLifetimePro) {
               <div class="pro-upgrade-card" (click)="openProModal()">
                 <div class="upgrade-card-content">
                   <div class="upgrade-card-title-row">
@@ -233,6 +242,24 @@ import {
               <!-- <button type="button" class="dev-toggle-link" (click)="toggleDevTier()">
                 <span>{{ isProTier ? 'Switch to Free (Test)' : 'Switch to Pro (Test)' }}</span>
               </button> -->
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- This Device Card -->
+        <ion-card color="dark" class="settings-card">
+          <ion-card-content>
+            <div class="section-header">
+              <h3 class="section-title">This Device</h3>
+              <ion-badge color="primary">Mobile</ion-badge>
+            </div>
+            <div class="device-card-content">
+              <div class="device-info">
+                <div class="device-details">
+                  <span class="device-name">{{ clientDeviceName }}</span>
+                  <span class="device-ports">Reported to desktop StreamDeck when connected</span>
+                </div>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>
@@ -318,6 +345,22 @@ import {
                 </ion-label>
               </ion-item>
 
+              <ion-item class="info-item download-pc-item">
+                <ion-icon name="desktop-outline" slot="start" color="primary"></ion-icon>
+                <ion-label (click)="openDesktopDownload($event)" style="cursor: pointer;">
+                  <h2>Download Desktop App</h2>
+                  <p>PixelPal Companion for Windows (v1.0.1)</p>
+                </ion-label>
+                <div slot="end" class="item-action-btns">
+                  <ion-button fill="clear" color="light" size="small" (click)="copyDownloadLink($event)" title="Copy Link">
+                    <ion-icon name="copy-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button fill="clear" color="primary" size="small" (click)="openDesktopDownload($event)" title="Download">
+                    <ion-icon name="cloud-download-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+              </ion-item>
+
               <ion-item class="info-item">
                 <ion-label>
                   <h2>Support & Contact</h2>
@@ -327,9 +370,17 @@ import {
             </ion-list>
 
             <div class="support-buttons">
-              <ion-button fill="outline" color="light" href="https://github.com" target="_blank" size="small">
+              <ion-button fill="solid" color="primary" (click)="openDesktopDownload($event)" size="small">
+                <ion-icon name="cloud-download-outline" slot="start"></ion-icon>
+                Download PC App
+              </ion-button>
+              <ion-button fill="outline" color="light" (click)="copyDownloadLink($event)" size="small">
+                <ion-icon name="copy-outline" slot="start"></ion-icon>
+                Copy Link
+              </ion-button>
+              <ion-button fill="outline" color="light" href="https://github.com/leo-devstudio/PixelPal-releases" target="_blank" size="small">
                 <ion-icon name="globe-outline" slot="start"></ion-icon>
-                Website
+                Releases
               </ion-button>
               <ion-button fill="outline" color="light" href="mailto:support@companionapp.io" size="small">
                 <ion-icon name="mail-outline" slot="start"></ion-icon>
@@ -703,15 +754,37 @@ import {
       color: #a0a0a0;
       font-size: 13px;
     }
+    .download-pc-item {
+      --background: rgba(59, 130, 246, 0.08);
+      --border-color: rgba(59, 130, 246, 0.25);
+      --border-radius: 8px;
+      --padding-start: 12px;
+      --inner-padding-end: 12px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 8px;
+      margin: 8px 0 14px;
+      cursor: pointer;
+    }
+    .download-pc-item h2 {
+      color: #60a5fa !important;
+      font-weight: 700 !important;
+    }
+    .item-action-btns {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
     .support-buttons {
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-top: 16px;
     }
   `]
 })
 export class SettingsPage implements OnInit, OnDestroy {
   public device: PairedDevice | null = null;
+  public clientDeviceName = '';
   public isRediscovering = false;
 
   public showToast = false;
@@ -719,7 +792,77 @@ export class SettingsPage implements OnInit, OnDestroy {
 
   // Entitlement
   public isProTier = false;
+  public trialStatus: TrialStatus | null = null;
   public formattedPrice = '$4.99';
+
+  public desktopDownloadUrl = environment.desktopDownloadUrl;
+
+  public openDesktopDownload(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.open(this.desktopDownloadUrl, '_system');
+  }
+
+  public async copyDownloadLink(event?: Event): Promise<void> {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(this.desktopDownloadUrl);
+        this.triggerToast('Download link copied to clipboard!');
+        return;
+      }
+      const textArea = document.createElement('textarea');
+      textArea.value = this.desktopDownloadUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (success) {
+        this.triggerToast('Download link copied to clipboard!');
+      } else {
+        this.triggerToast('Failed to copy download link.');
+      }
+    } catch {
+      this.triggerToast('Could not copy link to clipboard.');
+    }
+  }
+
+  public get isLifetimePro(): boolean {
+    return this.isProTier && (
+      !this.trialStatus?.enabled ||
+      !this.trialStatus.isActive ||
+      this.entitlementService.getEntitlementPayload().source === 'google_play'
+    );
+  }
+
+  public get isTrialPro(): boolean {
+    return this.isProTier && Boolean(
+      this.trialStatus?.enabled &&
+      this.trialStatus.isActive &&
+      this.entitlementService.getEntitlementPayload().source === 'trial'
+    );
+  }
+
+  public get trialExpiryFormatted(): string {
+    if (!this.trialStatus?.expiresAt) return '';
+    try {
+      return new Date(this.trialStatus.expiresAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return this.trialStatus.expiresAt;
+    }
+  }
 
   // Sound settings
   public soundSettings: SoundSettings = {
@@ -756,7 +899,9 @@ export class SettingsPage implements OnInit, OnDestroy {
       volumeMediumOutline,
       musicalNotesOutline,
       playOutline,
-      sparklesOutline
+      sparklesOutline,
+      cloudDownloadOutline,
+      copyOutline
     });
 
     this.presets = this.soundService.getPresets();
@@ -765,9 +910,18 @@ export class SettingsPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.clientDeviceName = this.companionService.getClientDeviceName();
+
     this.subs.add(
       this.companionService.pairedDevice$.subscribe((device) => {
         this.device = device;
+      })
+    );
+
+    this.trialStatus = this.entitlementService.getTrialStatus();
+    this.subs.add(
+      this.entitlementService.trialStatus$.subscribe((status) => {
+        this.trialStatus = status;
       })
     );
 
@@ -805,6 +959,15 @@ export class SettingsPage implements OnInit, OnDestroy {
       handle: true,
     });
     await modal.present();
+    const { data } = await modal.onDidDismiss();
+
+    this.isProTier = this.entitlementService.isPro();
+    if (data?.purchased || data?.restored) {
+      if (this.companionService.connectionState$.value === 'connected') {
+        this.companionService.disconnect(true);
+        setTimeout(() => this.companionService.connect(), 200);
+      }
+    }
   }
 
   public async restorePurchases() {
