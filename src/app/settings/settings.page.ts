@@ -239,9 +239,11 @@ import { environment } from '../../environments/environment';
                 <span>Restore Purchase</span>
               </button>
 
-              <!-- <button type="button" class="dev-toggle-link" (click)="toggleDevTier()">
+              @if (!isProduction) {
+              <button type="button" class="dev-toggle-link" (click)="toggleDevTier()">
                 <span>{{ isProTier ? 'Switch to Free (Test)' : 'Switch to Pro (Test)' }}</span>
-              </button> -->
+              </button>
+              }
             </div>
           </ion-card-content>
         </ion-card>
@@ -374,15 +376,15 @@ import { environment } from '../../environments/environment';
                 <ion-icon name="cloud-download-outline" slot="start"></ion-icon>
                 Download PC App
               </ion-button>
-              <ion-button fill="outline" color="light" (click)="copyDownloadLink($event)" size="small">
+              <ion-button fill="outline" color="dark" (click)="copyDownloadLink($event)" size="small">
                 <ion-icon name="copy-outline" slot="start"></ion-icon>
                 Copy Link
               </ion-button>
-              <ion-button fill="outline" color="light" href="https://github.com/leo-devstudio/PixelPal-releases" target="_blank" size="small">
+              <ion-button fill="outline" color="dark" href="https://github.com/leo-devstudio/PixelPal-releases" target="_blank" size="small">
                 <ion-icon name="globe-outline" slot="start"></ion-icon>
                 Releases
               </ion-button>
-              <ion-button fill="outline" color="light" href="mailto:support@companionapp.io" size="small">
+              <ion-button fill="outline" color="dark" href="mailto:leolagardo.devstudio@gmail.com" size="small">
                 <ion-icon name="mail-outline" slot="start"></ion-icon>
                 Email Support
               </ion-button>
@@ -796,6 +798,7 @@ export class SettingsPage implements OnInit, OnDestroy {
   public formattedPrice = '$4.99';
 
   public desktopDownloadUrl = environment.desktopDownloadUrl;
+  public isProduction = environment.production;
 
   public openDesktopDownload(event?: Event): void {
     if (event) {
@@ -981,6 +984,7 @@ export class SettingsPage implements OnInit, OnDestroy {
   }
 
   public toggleDevTier() {
+    if (this.isProduction) return;
     const nextTier = this.isProTier ? 'free' : 'pro';
     this.entitlementService.setTier(nextTier);
     this.triggerToast(`Simulated tier switched to ${nextTier.toUpperCase()}`);
