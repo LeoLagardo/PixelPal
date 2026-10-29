@@ -141,6 +141,8 @@ export class HomePage implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   public isInactive = false;
+  /** Above this many screens, the bottom bar shows an "n / total" counter instead of dots. */
+  public readonly maxIndicatorDots = 7;
   public isPro = false;
   private readonly INACTIVITY_MS = 5000;
 

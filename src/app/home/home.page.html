@@ -53,27 +53,6 @@
         } @else {
           <!-- Full-bleed Carousel -->
           <div class="carousel-wrapper">
-            @if (currentScreenIndex > 0) {
-              <button
-                class="carousel-nav-btn nav-left"
-                [class.is-dimmed]="isInactive"
-                (click)="goToPrevScreen()"
-                #hideable
-              >
-                <ion-icon name="chevron-back-outline"></ion-icon>
-              </button>
-            }
-
-            @if (currentScreenIndex < screens.length - 1) {
-              <button
-                class="carousel-nav-btn nav-right"
-                [class.is-dimmed]="isInactive"
-                (click)="goToNextScreen()"
-                #hideable
-              >
-                <ion-icon name="chevron-forward-outline"></ion-icon>
-              </button>
-            }
 
             <div
               #carouselContainer
@@ -201,14 +180,51 @@
 
               <div class="bottom-bar-center">
                 @if (screens.length > 1) {
-                  <div class="carousel-dots-indicator">
-                    @for (s of screens; track $index) {
-                      <span
-                        class="indicator-dot"
-                        [ngClass]="{ 'is-active': $index === currentScreenIndex }"
-                        (click)="scrollToScreen($index)"
-                      ></span>
-                    }
+                  <div class="screen-nav">
+                    <button
+                      type="button"
+                      class="screen-nav-btn"
+                      [disabled]="currentScreenIndex === 0"
+                      (click)="goToPrevScreen()"
+                      title="Previous screen"
+                      aria-label="Previous screen"
+                    >
+                      <ion-icon name="chevron-back-outline"></ion-icon>
+                    </button>
+
+                    <div class="screen-nav-info">
+                      @if (screens.length <= maxIndicatorDots) {
+                        <div class="carousel-dots-indicator">
+                          @for (s of screens; track $index) {
+                            <button
+                              type="button"
+                              class="indicator-dot-hit"
+                              [attr.aria-label]="'Go to screen ' + ($index + 1)"
+                              (click)="scrollToScreen($index)"
+                            >
+                              <span
+                                class="indicator-dot"
+                                [class.is-active]="$index === currentScreenIndex"
+                              ></span>
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <span class="screen-counter">{{ currentScreenIndex + 1 }} / {{ screens.length }}</span>
+                      }
+                
+                    </div>
+
+                    <button
+                      type="button"
+                      class="screen-nav-btn"
+                      [disabled]="currentScreenIndex >= screens.length - 1"
+                      (click)="goToNextScreen()"
+                      title="Next screen"
+                      aria-label="Next screen"
+                    >
+                      <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </button>
                   </div>
                 }
               </div>

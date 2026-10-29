@@ -250,9 +250,6 @@
                 <ion-icon name="copy-outline" slot="start"></ion-icon>
                 Copy Link
               </ion-button>
-              <ion-button size="small" fill="clear" color="medium" (click)="setMode('manual')">
-                Enter IP Manually
-              </ion-button>
             </div>
           </div>
         }
@@ -341,7 +338,8 @@
     }
 
     <!-- ==================== DEVELOPER & ADVANCED TOOLS ACCORDION ==================== -->
-    <!-- <div class="dev-tools-wrapper">
+    @if (!isProduction) {
+    <div class="dev-tools-wrapper">
       <ion-accordion-group class="dev-accordion">
         <ion-accordion value="dev-tools">
           <ion-item slot="header" class="dev-header-item">
@@ -387,6 +385,9 @@
           </div>
         </ion-accordion>
       </ion-accordion-group>
+    </div>
+    }
+
     <!-- Desktop App Download Helper Banner -->
     <div class="desktop-download-banner">
       <div class="download-banner-content">
@@ -411,7 +412,7 @@
         </ion-button>
         <ion-button
           fill="outline"
-          color="light"
+          color="primary"
           size="small"
           class="banner-copy-btn"
           (click)="copyDownloadLink($event)"

@@ -140,6 +140,7 @@ export class PairingPage implements OnInit, OnDestroy {
   }
 
   public desktopDownloadUrl = environment.desktopDownloadUrl;
+  public isProduction = environment.production;
 
   public openDesktopDownload(event?: Event): void {
     if (event) {

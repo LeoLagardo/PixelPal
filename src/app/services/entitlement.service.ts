@@ -56,13 +56,13 @@ export class EntitlementService {
     this.tier$ = this.tierSubject.asObservable();
 
     // Verify against HTTP time server asynchronously
-    this.verifyTrialOnline();
+    // this.verifyTrialOnline();
 
     // Periodic check every 15 minutes (or on app visibility/focus)
-    if (typeof window !== 'undefined') {
-      window.addEventListener('focus', () => this.verifyTrialOnline());
-      setInterval(() => this.verifyTrialOnline(), 15 * 60 * 1000);
-    }
+    // if (typeof window !== 'undefined') {
+    //   window.addEventListener('focus', () => this.verifyTrialOnline());
+    //   setInterval(() => this.verifyTrialOnline(), 15 * 60 * 1000);
+    // }
   }
 
   public get currentTier(): EntitlementTier {
