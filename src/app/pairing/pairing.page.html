@@ -5,6 +5,9 @@
     </ion-buttons>
     <ion-title>Connect to PC</ion-title>
     <ion-buttons slot="end">
+      <ion-button fill="clear" color="primary" (click)="startTutorial()" title="Quick Setup Guide">
+        <ion-icon name="help-circle-outline" slot="icon-only"></ion-icon>
+      </ion-button>
       <ion-button fill="clear" color="medium" (click)="triggerToast('Ensure PixelPal is running on your desktop PC.')">
         <ion-icon name="information-circle-outline" slot="icon-only"></ion-icon>
       </ion-button>
@@ -37,7 +40,7 @@
 
     <!-- Mode Selector Segment -->
     <div class="segment-wrapper">
-      <ion-segment [value]="mode" (ionChange)="onSegmentChange($event)" mode="ios" class="custom-segment">
+      <ion-segment id="tour-pairing-modes" [value]="mode" (ionChange)="onSegmentChange($event)" mode="ios" class="custom-segment">
         <ion-segment-button value="qr">
           <ion-icon name="qr-code-outline"></ion-icon>
           <ion-label>Scan QR</ion-label>
@@ -58,7 +61,7 @@
     <!-- ==================== MODE 1: QR CODE & QUICK PAIR ==================== -->
     @if (mode === 'qr') {
       <div class="flow-card qr-flow-card">
-        <div class="qr-hero-card">
+        <div class="qr-hero-card" id="tour-qr-card">
           <div class="scanner-preview-box" (click)="startScanning()">
             <div class="scanner-preview-corners">
               <span class="corner-mark top-left"></span>
@@ -103,7 +106,7 @@
               <span class="step-num">1</span>
               <div class="step-info-col">
                 <span class="step-text">Open <strong>PixelPal</strong> on your PC</span>
-                <div class="step-action-row">
+                <div class="step-action-row" id="tour-pc-download">
                   <button type="button" class="step-download-badge" (click)="openDesktopDownload($event)">
                     <ion-icon name="cloud-download-outline"></ion-icon>
                     <span>Download PC App</span>
@@ -389,7 +392,7 @@
     }
 
     <!-- Desktop App Download Helper Banner -->
-    <div class="desktop-download-banner">
+    <div class="desktop-download-banner" id="tour-faq-section">
       <div class="download-banner-content">
         <div class="banner-icon-box">
           <ion-icon name="desktop-outline"></ion-icon>

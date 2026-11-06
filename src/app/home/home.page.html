@@ -52,7 +52,7 @@
           </div>
         } @else {
           <!-- Full-bleed Carousel -->
-          <div class="carousel-wrapper">
+          <div class="carousel-wrapper" id="tour-deck-grid">
 
             <div
               #carouselContainer
@@ -178,7 +178,7 @@
                 }
               </div>
 
-              <div class="bottom-bar-center">
+              <div class="bottom-bar-center" id="tour-deck-nav">
                 @if (screens.length > 1) {
                   <div class="screen-nav">
                     <button
@@ -254,6 +254,7 @@
                   <span class="btn-text">Disconnect</span>
                 </button>
                 <button
+                  id="tour-deck-settings"
                   class="bottom-icon-btn"
                   (click)="goToSettings()"
                   title="Settings"

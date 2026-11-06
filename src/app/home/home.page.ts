@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
+import { TutorialService } from '../services/tutorial.service';
 import { OrientationService } from '../services/orientation.service';
 import { ScreenConfig, ButtonConfig, ButtonAction, PairedDevice } from '../models';
 import { CommonModule } from '@angular/common';
@@ -227,7 +228,8 @@ export class HomePage implements OnInit, OnDestroy {
     private entitlementService: EntitlementService,
     private modalCtrl: ModalController,
     private router: Router,
-    private orientationService: OrientationService
+    private orientationService: OrientationService,
+    private tutorialService: TutorialService
   ) {
     addIcons({
       settingsOutline,
@@ -274,6 +276,9 @@ export class HomePage implements OnInit, OnDestroy {
     this.subs.add(
       this.companionService.screens$.subscribe((screens) => {
         this.screens = screens || [];
+        if (this.screens.length > 0 && !this.tutorialService.isDeckTourCompleted()) {
+          setTimeout(() => this.tutorialService.startDeckTour(false), 800);
+        }
         // Ensure index doesn't go out of bounds
         if (this.currentScreenIndex >= this.screens.length) {
           this.currentScreenIndex = Math.max(0, this.screens.length - 1);
@@ -313,6 +318,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ionViewWillLeave() {
+    this.tutorialService.stopActiveTour();
     this.orientationService.unlock();
   }
 
@@ -321,6 +327,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.tutorialService.stopActiveTour();
     this.orientationService.unlock();
     this.subs.unsubscribe();
   }

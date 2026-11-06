@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { CompanionService } from '../services/companion.service';
+import { TutorialService } from '../services/tutorial.service';
 import { DiscoveredDevice, PairedDevice } from '../models';
 import { FormsModule } from '@angular/forms';
 import { Capacitor } from '@capacitor/core';
@@ -110,7 +111,11 @@ export class PairingPage implements OnInit, OnDestroy {
   private mediaStream: MediaStream | null = null;
   private animationFrameId: number | null = null;
 
-  constructor(private companionService: CompanionService, private router: Router) {
+  constructor(
+    private companionService: CompanionService,
+    private router: Router,
+    private tutorialService: TutorialService
+  ) {
     addIcons({
       qrCodeOutline,
       serverOutline,
@@ -181,6 +186,9 @@ export class PairingPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    if (!this.tutorialService.isPairingTourCompleted()) {
+      setTimeout(() => this.tutorialService.startPairingTour(false), 700);
+    }
     // On native devices default to scan or qr; on web default to qr
     if (Capacitor.isNativePlatform()) {
       this.mode = 'scan';
@@ -192,6 +200,14 @@ export class PairingPage implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.stopScanning();
+    this.tutorialService.stopActiveTour();
+  }
+
+  public startTutorial() {
+    this.mode = 'qr';
+    setTimeout(() => {
+      this.tutorialService.startPairingTour(true);
+    }, 150);
   }
 
   public setMode(mode: 'qr' | 'scan' | 'manual') {
